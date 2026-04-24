@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-Grawer Multi-Line MM</title>
+    <style>
+        :root { --bg-color: #121212; --panel-color: #1e1e1e; --accent-color: #00a8ff; }
+        body { background-color: var(--bg-color); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: var(--panel-color); padding: 25px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 850px; text-align: center; }
+        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; text-align: left; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 11px; text-transform: uppercase; color: #888; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { background: #2d2d2d; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; font-family: inherit; }
+        textarea { grid-column: span 3; height: 80px; resize: vertical; }
+        .mm-indicator { font-weight: bold; color: var(--accent-color); margin-left: 5px; }
+        #canvas-container { background: #000; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: inset 0 0 15px rgba(0,0,0,1); }
+        canvas { display: block; max-width: 100%; height: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Symulator Grawera (Wieloliniowy)</h2>
+    
+    <div class="controls">
+        <div class="input-group full-width" style="grid-column: span 3;">
+            <label>Tekst graweru (użyj Enter dla nowej linii)</label>
+            <textarea id="textInput">TABLICZKA&#10;ZNAMIONOWA&#10;2026</textarea>
+        </div>
+
+        <div class="input-group">
+            <label>Szerokość (mm)</label>
+            <input type="number" id="widthMM" value="150" min="50">
+        </div>
+        <div class="input-group">
+            <label>Wysokość (mm)</label>
+            <input type="number" id="heightMM" value="100" min="20">
+        </div>
+        <div class="input-group">
+            <label>Materiał</label>
+            <select id="materialSelect">
+                <option value="brass">Mosiądz</option>
+                <option value="steel">Stal szczotkowana</option>
+                <option value="aluminum">Aluminium</option>
+                <option value="plastic">Laminat (Czarno-Biały)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Czcionka</label>
+            <select id="fontSelect">
+                <option value="sans-serif">Nowoczesna</option>
+                <option value="serif">Klasyczna</option>
+                <option value="monospace">Techniczna</option>
+            </select>
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+            <label>Wysokość litery: <span id="mmLabel" class="mm-indicator">10 mm</span></label>
+            <input type="range" id="sizePX" min="10" max="150" value="40">
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="engraveCanvas"></canvas>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('engraveCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const textInput = document.getElementById('textInput');
+    const widthMM = document.getElementById('widthMM');
+    const heightMM = document.getElementById('heightMM');
+    const materialSelect = document.getElementById('materialSelect');
+    const fontSelect = document.getElementById('fontSelect');
+    const sizePX = document.getElementById('sizePX');
+    const mmLabel = document.getElementById('mmLabel');
+
+    const PX_PER_MM = 4;
+
+    const materials = {
+        brass: { surface: '#e1b12c', groove: '#4b3d0d', grain: 0.1 },
+        steel: { surface: '#a5abb6', groove: '#2f3542', grain: 0.3 },
+        aluminum: { surface: '#dcdde1', groove: '#718093', grain: 0.05 },
+        plastic: { surface: '#1a1a1a', groove: '#ffffff', grain: 0 }
+    };
+
+    function update() {
+        canvas.width = (widthMM.value || 50) * PX_PER_MM;
+        canvas.height = (heightMM.value || 20) * PX_PER_MM;
+
+        const fontSizeMM = (sizePX.value / PX_PER_MM).toFixed(1);
+        mmLabel.innerText = `${fontSizeMM} mm`;
+
+        draw();
+    }
+
+    function draw() {
+        const text = textInput.value;
+        const font = fontSelect.value;
+        const fontSize = parseInt(sizePX.value);
+        const mat = materials[materialSelect.value];
+
+        // 1. Tło i materiał
+        ctx.fillStyle = mat.surface;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (mat.grain > 0) {
+            ctx.strokeStyle = `rgba(255,255,255,${mat.grain})`;
+            for(let i=0; i < canvas.height; i += 3) {
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+            }
+        }
+
+        // 2. Przygotowanie tekstu wieloliniowego
+        ctx.font = `bold ${fontSize}px ${font}`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // Rozbijamy tekst na linie
+        const lines = text.split('\n');
+        const lineHeight = fontSize * 1.2; // Odstęp między liniami (1.2 to standard)
+        const totalHeight = lines.length * lineHeight;
+        
+        // Punkt startowy Y (centrowanie bloku tekstu w pionie)
+        let startY = (canvas.height / 2) - (totalHeight / 2) + (lineHeight / 2);
+
+        // 3. Renderowanie każdej linii
+        lines.forEach((line, index) => {
+            const currentY = startY + (index * lineHeight);
+            
+            // Efekt głębi (cień)
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = "rgba(0,0,0,0.6)";
+
+            ctx.fillStyle = mat.groove;
+            ctx.fillText(line, canvas.width / 2, currentY);
+            
+            // Reset cienia dla czystości kolejnych operacji
+            ctx.shadowColor = "transparent";
+        });
+    }
+
+    [textInput, widthMM, heightMM, materialSelect, fontSelect, sizePX].forEach(el => {
+        el.addEventListener('input', update);
+    });
+
+    update();
+</script>
+<link rel="manifest" href="manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+<button onclick="downloadImage()" style="width:100%; padding:15px; margin-top:10px; border-radius:12px; border:none; background:var(--accent-color); color:black; font-weight:bold;">
+    POBIERZ OBRAZ (.PNG)
+</button>
+
+<script>
+function downloadImage() {
+    const link = document.createElement('a');
+    link.download = 'moj-grawer.png';
+    link.href = document.getElementById('engraveCanvas').toDataURL();
+    link.click();
+}
+</script>
+
+</body>
+</html>
