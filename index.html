@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+    <link rel="manifest" href="manifest.json">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+      }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro-Grawer Multi-Line MM</title>
@@ -151,12 +157,7 @@
 
     update();
 </script>
-<link rel="manifest" href="manifest.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
+
 <button onclick="downloadImage()" style="width:100%; padding:15px; margin-top:10px; border-radius:12px; border:none; background:var(--accent-color); color:black; font-weight:bold;">
     POBIERZ OBRAZ (.PNG)
 </button>
