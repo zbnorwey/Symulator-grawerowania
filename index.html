@@ -1,174 +1,210 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <link rel="manifest" href="manifest.json">
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-      }
-    </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Grawer Multi-Line MM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grawer Mobilny</title>
     <style>
-        :root { --bg-color: #121212; --panel-color: #1e1e1e; --accent-color: #00a8ff; }
-        body { background-color: var(--bg-color); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { background: var(--panel-color); padding: 25px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 850px; text-align: center; }
-        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; text-align: left; }
-        .input-group { display: flex; flex-direction: column; }
-        label { font-size: 11px; text-transform: uppercase; color: #888; margin-bottom: 5px; font-weight: bold; }
-        input, select, textarea { background: #2d2d2d; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; font-family: inherit; }
-        textarea { grid-column: span 3; height: 80px; resize: vertical; }
-        .mm-indicator { font-weight: bold; color: var(--accent-color); margin-left: 5px; }
-        #canvas-container { background: #000; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; box-shadow: inset 0 0 15px rgba(0,0,0,1); }
-        canvas { display: block; max-width: 100%; height: auto; }
+        :root { 
+            --bg-color: #0f172a; 
+            --panel-color: #1e293b; 
+            --accent-color: #38bdf8; 
+            --error-color: #ef4444; 
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            color: #f8fafc; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; 
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px; /* Szerokość typowego smartfona */
+        }
+
+        .card {
+            background: var(--panel-color);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+
+        .input-group { margin-bottom: 12px; }
+        
+        label { 
+            display: block;
+            font-size: 10px; 
+            text-transform: uppercase; 
+            color: #94a3b8; 
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+
+        textarea, input, select {
+            width: 100%;
+            box-sizing: border-box;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 16px; /* 16px zapobiega auto-zoomowi na iOS */
+        }
+
+        /* Stylizacja suwaków (Thumb musi być duży dla palca) */
+        input[type=range] {
+            height: 30px;
+            -webkit-appearance: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            -webkit-appearance: none;
+            margin-top: -8px;
+        }
+
+        #canvas-wrapper {
+            width: 100%;
+            overflow: hidden;
+            background: #000;
+            border-radius: 12px;
+            border: 3px solid #334155;
+            margin-top: 10px;
+            touch-action: none; /* Zapobiega przewijaniu strony podczas dotykania canvasu */
+        }
+
+        canvas {
+            width: 100% !important; /* Canvas skaluje się do szerokości ekranu */
+            height: auto !important;
+            display: block;
+        }
+
+        .alert {
+            color: var(--error-color);
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Symulator Grawera (Wieloliniowy)</h2>
-    
-    <div class="controls">
-        <div class="input-group full-width" style="grid-column: span 3;">
-            <label>Tekst graweru (użyj Enter dla nowej linii)</label>
-            <textarea id="textInput">TABLICZKA&#10;ZNAMIONOWA&#10;2026</textarea>
+<div class="app-container">
+    <div class="card">
+        <div class="input-group">
+            <label>Treść graweru</label>
+            <textarea id="textInput" spellcheck="false">Grawer&#10;Mobilny</textarea>
         </div>
 
-        <div class="input-group">
-            <label>Szerokość (mm)</label>
-            <input type="number" id="widthMM" value="150" min="50">
+        <div style="display: flex; gap: 10px;">
+            <div class="input-group" style="flex: 1;">
+                <label>Szerokość (mm)</label>
+                <input type="number" id="widthMM" value="100">
+            </div>
+            <div class="input-group" style="flex: 1;">
+                <label>Wysokość (mm)</label>
+                <input type="number" id="heightMM" value="60">
+            </div>
         </div>
-        <div class="input-group">
-            <label>Wysokość (mm)</label>
-            <input type="number" id="heightMM" value="100" min="20">
-        </div>
+
         <div class="input-group">
             <label>Materiał</label>
             <select id="materialSelect">
-                <option value="brass">Mosiądz</option>
                 <option value="steel">Stal szczotkowana</option>
+                <option value="brass">Złoty mosiądz</option>
                 <option value="aluminum">Aluminium</option>
-                <option value="plastic">Laminat (Czarno-Biały)</option>
             </select>
         </div>
 
         <div class="input-group">
-            <label>Czcionka</label>
-            <select id="fontSelect">
-                <option value="sans-serif">Nowoczesna</option>
-                <option value="serif">Klasyczna</option>
-                <option value="monospace">Techniczna</option>
-            </select>
-        </div>
-        <div class="input-group" style="grid-column: span 2;">
-            <label>Wysokość litery: <span id="mmLabel" class="mm-indicator">10 mm</span></label>
+            <label>Wysokość czcionki: <span id="mmLabel" style="color:var(--accent-color)">10 mm</span></label>
             <input type="range" id="sizePX" min="10" max="150" value="40">
         </div>
     </div>
 
-    <div id="canvas-container">
+    <div id="canvas-wrapper">
         <canvas id="engraveCanvas"></canvas>
     </div>
+    <div id="alert" class="alert">⚠️ PROJEKT WYKRACZA POZA MATERIAŁ!</div>
 </div>
 
 <script>
     const canvas = document.getElementById('engraveCanvas');
     const ctx = canvas.getContext('2d');
-
-    const textInput = document.getElementById('textInput');
-    const widthMM = document.getElementById('widthMM');
-    const heightMM = document.getElementById('heightMM');
-    const materialSelect = document.getElementById('materialSelect');
-    const fontSelect = document.getElementById('fontSelect');
-    const sizePX = document.getElementById('sizePX');
-    const mmLabel = document.getElementById('mmLabel');
-
-    const PX_PER_MM = 4;
+    const PX_PER_MM = 6; // Wyższa gęstość dla lepszej jakości na ekranach Retina/OLED
 
     const materials = {
-        brass: { surface: '#e1b12c', groove: '#4b3d0d', grain: 0.1 },
-        steel: { surface: '#a5abb6', groove: '#2f3542', grain: 0.3 },
-        aluminum: { surface: '#dcdde1', groove: '#718093', grain: 0.05 },
-        plastic: { surface: '#1a1a1a', groove: '#ffffff', grain: 0 }
+        steel: { surface: '#64748b', groove: '#0f172a', grain: 0.2 },
+        brass: { surface: '#fbbf24', groove: '#451a03', grain: 0.15 },
+        aluminum: { surface: '#cbd5e1', groove: '#475569', grain: 0.05 }
     };
 
-    function update() {
-        canvas.width = (widthMM.value || 50) * PX_PER_MM;
-        canvas.height = (heightMM.value || 20) * PX_PER_MM;
-
-        const fontSizeMM = (sizePX.value / PX_PER_MM).toFixed(1);
-        mmLabel.innerText = `${fontSizeMM} mm`;
-
-        draw();
-    }
-
     function draw() {
-        const text = textInput.value;
-        const font = fontSelect.value;
-        const fontSize = parseInt(sizePX.value);
-        const mat = materials[materialSelect.value];
+        const w = parseInt(document.getElementById('widthMM').value) || 50;
+        const h = parseInt(document.getElementById('heightMM').value) || 20;
+        const fontSize = parseInt(document.getElementById('sizePX').value);
+        const mat = materials[document.getElementById('materialSelect').value];
+        const text = document.getElementById('textInput').value;
 
-        // 1. Tło i materiał
+        canvas.width = w * PX_PER_MM;
+        canvas.height = h * PX_PER_MM;
+
+        // Tło
         ctx.fillStyle = mat.surface;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Tekstura
         if (mat.grain > 0) {
             ctx.strokeStyle = `rgba(255,255,255,${mat.grain})`;
-            for(let i=0; i < canvas.height; i += 3) {
+            for(let i=0; i < canvas.height; i += 4) {
                 ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
             }
         }
 
-        // 2. Przygotowanie tekstu wieloliniowego
-        ctx.font = `bold ${fontSize}px ${font}`;
+        // Tekst
+        ctx.font = `bold ${fontSize}px sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        
-        // Rozbijamy tekst na linie
+        ctx.fillStyle = mat.groove;
+
         const lines = text.split('\n');
-        const lineHeight = fontSize * 1.2; // Odstęp między liniami (1.2 to standard)
+        const lineHeight = fontSize * 1.2;
         const totalHeight = lines.length * lineHeight;
-        
-        // Punkt startowy Y (centrowanie bloku tekstu w pionie)
         let startY = (canvas.height / 2) - (totalHeight / 2) + (lineHeight / 2);
 
-        // 3. Renderowanie każdej linii
-        lines.forEach((line, index) => {
-            const currentY = startY + (index * lineHeight);
-            
-            // Efekt głębi (cień)
-            ctx.shadowOffsetX = 1;
-            ctx.shadowOffsetY = 1;
-            ctx.shadowBlur = 2;
-            ctx.shadowColor = "rgba(0,0,0,0.6)";
+        let overflow = (totalHeight > canvas.height);
 
-            ctx.fillStyle = mat.groove;
-            ctx.fillText(line, canvas.width / 2, currentY);
+        lines.forEach((line, index) => {
+            const y = startY + (index * lineHeight);
+            if (ctx.measureText(line).width > canvas.width * 0.98) overflow = true;
             
-            // Reset cienia dla czystości kolejnych operacji
-            ctx.shadowColor = "transparent";
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetY = 2;
+            ctx.fillText(line, canvas.width / 2, y);
         });
+
+        document.getElementById('mmLabel').innerText = (fontSize / PX_PER_MM).toFixed(1) + " mm";
+        document.getElementById('alert').style.display = overflow ? 'block' : 'none';
+        document.getElementById('canvas-wrapper').style.borderColor = overflow ? '#ef4444' : '#334155';
     }
 
-    [textInput, widthMM, heightMM, materialSelect, fontSelect, sizePX].forEach(el => {
-        el.addEventListener('input', update);
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        el.addEventListener('input', draw);
     });
 
-    update();
-</script>
-
-<button onclick="downloadImage()" style="width:100%; padding:15px; margin-top:10px; border-radius:12px; border:none; background:var(--accent-color); color:black; font-weight:bold;">
-    POBIERZ OBRAZ (.PNG)
-</button>
-
-<script>
-function downloadImage() {
-    const link = document.createElement('a');
-    link.download = 'moj-grawer.png';
-    link.href = document.getElementById('engraveCanvas').toDataURL();
-    link.click();
-}
+    draw();
 </script>
 
 </body>
