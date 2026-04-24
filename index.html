@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Orbitron:wght@700&family=Dancing+Script:wght@700&family=Roboto+Mono:wght@700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grawer Mobilny</title>
@@ -120,6 +124,14 @@
 
         <div class="input-group">
             <label>Materiał</label>
+            <select id="fontSelect">
+                <option value="'Roboto Mono', monospace">Techniczna (Maszynowa)</option>
+                <option value="'Orbitron', sans-serif">Futurystyczna (Laser)</option>
+                <option value="'Cinzel', serif">Klasyczna Rzymska (Kamień/Metal)</option>
+                <option value="'Dancing Script', cursive">Ozdobna (Biżuteria)</option>
+                <option value="'Playfair Display', serif">Elegancka (Kursywa)</option>
+            </select>
+
             <select id="materialSelect">
                 <option value="steel">Stal szczotkowana</option>
                 <option value="brass">Złoty mosiądz</option>
