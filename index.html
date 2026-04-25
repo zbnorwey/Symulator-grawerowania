@@ -1,105 +1,80 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Orbitron:wght@700&family=Dancing+Script:wght@700&family=Roboto+Mono:wght@700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grawer Mobilny</title>
+    <title>Grawer Pro CNC</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         :root { 
             --bg-color: #0f172a; 
             --panel-color: #1e293b; 
             --accent-color: #38bdf8; 
             --error-color: #ef4444; 
+            --success-color: #22c55e;
         }
 
         body { 
             background-color: var(--bg-color); 
             color: #f8fafc; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0; 
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0; padding: 10px;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        .app-container {
-            width: 100%;
-            max-width: 500px; /* Szerokość typowego smartfona */
-        }
+        .app-container { width: 100%; max-width: 550px; }
 
         .card {
             background: var(--panel-color);
-            padding: 15px;
-            border-radius: 20px;
+            padding: 15px; border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .input-group { margin-bottom: 12px; }
         
         label { 
-            display: block;
-            font-size: 10px; 
-            text-transform: uppercase; 
-            color: #94a3b8; 
-            margin-bottom: 4px;
-            letter-spacing: 1px;
+            display: block; font-size: 10px; text-transform: uppercase; 
+            color: #94a3b8; margin-bottom: 4px; font-weight: bold;
         }
 
         textarea, input, select {
-            width: 100%;
-            box-sizing: border-box;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: white;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 16px; /* 16px zapobiega auto-zoomowi na iOS */
+            width: 100%; box-sizing: border-box; background: #0f172a;
+            border: 1px solid #334155; color: white; padding: 12px;
+            border-radius: 12px; font-size: 16px; outline: none;
         }
 
-        /* Stylizacja suwaków (Thumb musi być duży dla palca) */
-        input[type=range] {
-            height: 30px;
-            -webkit-appearance: none;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            height: 24px;
-            width: 24px;
-            border-radius: 50%;
-            background: var(--accent-color);
-            -webkit-appearance: none;
-            margin-top: -8px;
-        }
+        textarea { height: 70px; resize: none; }
+
+        .grid-2 { display: flex; gap: 10px; }
+        .grid-2 > div { flex: 1; }
 
         #canvas-wrapper {
-            width: 100%;
-            overflow: hidden;
-            background: #000;
-            border-radius: 12px;
-            border: 3px solid #334155;
-            margin-top: 10px;
-            touch-action: none; /* Zapobiega przewijaniu strony podczas dotykania canvasu */
+            width: 100%; background: #000; border-radius: 12px;
+            border: 3px solid #334155; transition: all 0.3s;
+            touch-action: none; position: relative;
         }
 
-        canvas {
-            width: 100% !important; /* Canvas skaluje się do szerokości ekranu */
-            height: auto !important;
-            display: block;
+        canvas { width: 100% !important; height: auto !important; display: block; }
+
+        .error-border { border-color: var(--error-color) !important; }
+        
+        .status-bar {
+            text-align: center; padding: 5px; font-size: 12px; 
+            font-weight: bold; color: var(--error-color); visibility: hidden;
+        }
+        .status-bar.visible { visibility: visible; }
+
+        .btn-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        
+        button {
+            padding: 15px; border-radius: 12px; border: none;
+            font-weight: bold; font-size: 13px; cursor: pointer;
+            transition: opacity 0.2s;
         }
 
-        .alert {
-            color: var(--error-color);
-            font-size: 12px;
-            font-weight: bold;
-            margin-top: 10px;
-            text-align: center;
-            display: none;
-        }
+        .btn-png { background: var(--accent-color); color: #0f172a; }
+        .btn-svg { background: var(--success-color); color: white; }
     </style>
 </head>
 <body>
@@ -107,76 +82,87 @@
 <div class="app-container">
     <div class="card">
         <div class="input-group">
-            <label>Treść graweru</label>
-            <textarea id="textInput" spellcheck="false">Grawer&#10;Mobilny</textarea>
+            <label>Tekst graweru</label>
+            <textarea id="textInput" spellcheck="false">LINIA 1&#10;LINIA 2</textarea>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <div class="input-group" style="flex: 1;">
+        <div class="grid-2">
+            <div class="input-group">
                 <label>Szerokość (mm)</label>
-                <input type="number" id="widthMM" value="100">
+                <input type="number" id="widthMM" value="80">
             </div>
-            <div class="input-group" style="flex: 1;">
+            <div class="input-group">
                 <label>Wysokość (mm)</label>
-                <input type="number" id="heightMM" value="60">
+                <input type="number" id="heightMM" value="50">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="input-group">
+                <label>Materiał</label>
+                <select id="materialSelect">
+                    <option value="brass">Mosiądz</option>
+                    <option value="steel">Stal</option>
+                    <option value="aluminum">Aluminium</option>
+                    <option value="plastic">Laminat</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Czcionka</label>
+                <select id="fontSelect">
+                    <option value="sans-serif">Sans-Serif</option>
+                    <option value="serif">Serif</option>
+                    <option value="monospace">Monospace</option>
+                </select>
             </div>
         </div>
 
         <div class="input-group">
-            <label>Materiał</label>
-            <select id="fontSelect">
-                <option value="'Roboto Mono', monospace">Techniczna (Maszynowa)</option>
-                <option value="'Orbitron', sans-serif">Futurystyczna (Laser)</option>
-                <option value="'Cinzel', serif">Klasyczna Rzymska (Kamień/Metal)</option>
-                <option value="'Dancing Script', cursive">Ozdobna (Biżuteria)</option>
-                <option value="'Playfair Display', serif">Elegancka (Kursywa)</option>
-            </select>
-
-            <select id="materialSelect">
-                <option value="steel">Stal szczotkowana</option>
-                <option value="brass">Złoty mosiądz</option>
-                <option value="aluminum">Aluminium</option>
-            </select>
-        </div>
-
-        <div class="input-group">
-            <label>Wysokość czcionki: <span id="mmLabel" style="color:var(--accent-color)">10 mm</span></label>
-            <input type="range" id="sizePX" min="10" max="150" value="40">
+            <label>Wysokość litery: <span id="mmLabel" style="color:var(--accent-color)">10 mm</span></label>
+            <input type="range" id="sizePX" min="10" max="250" value="60">
         </div>
     </div>
 
     <div id="canvas-wrapper">
         <canvas id="engraveCanvas"></canvas>
     </div>
-    <div id="alert" class="alert">⚠️ PROJEKT WYKRACZA POZA MATERIAŁ!</div>
+    
+    <div id="status" class="status-bar">⚠️ TEKST WYKRACZA POZA POLE ROBOCZE!</div>
+    
+    <div class="btn-box">
+        <button class="btn-png" onclick="downloadPNG()">ZAPISZ PODGLĄD (.PNG)</button>
+        <button class="btn-svg" onclick="exportSVG()">EKSPORTUJ CNC (.SVG)</button>
+    </div>
 </div>
 
 <script>
     const canvas = document.getElementById('engraveCanvas');
     const ctx = canvas.getContext('2d');
-    const PX_PER_MM = 6; // Wyższa gęstość dla lepszej jakości na ekranach Retina/OLED
+    const PX_PER_MM = 5;
 
     const materials = {
-        steel: { surface: '#64748b', groove: '#0f172a', grain: 0.2 },
-        brass: { surface: '#fbbf24', groove: '#451a03', grain: 0.15 },
-        aluminum: { surface: '#cbd5e1', groove: '#475569', grain: 0.05 }
+        brass: { surface: '#e1b12c', groove: '#4b3d0d', grain: 0.1 },
+        steel: { surface: '#a5abb6', groove: '#1e293b', grain: 0.3 },
+        aluminum: { surface: '#d1d5db', groove: '#475569', grain: 0.05 },
+        plastic: { surface: '#1a1a1a', groove: '#ffffff', grain: 0 }
     };
 
     function draw() {
-        const w = parseInt(document.getElementById('widthMM').value) || 50;
-        const h = parseInt(document.getElementById('heightMM').value) || 20;
+        const wMM = parseInt(document.getElementById('widthMM').value) || 10;
+        const hMM = parseInt(document.getElementById('heightMM').value) || 10;
         const fontSize = parseInt(document.getElementById('sizePX').value);
         const mat = materials[document.getElementById('materialSelect').value];
+        const font = document.getElementById('fontSelect').value;
         const text = document.getElementById('textInput').value;
 
-        canvas.width = w * PX_PER_MM;
-        canvas.height = h * PX_PER_MM;
+        canvas.width = wMM * PX_PER_MM;
+        canvas.height = hMM * PX_PER_MM;
 
-        // Tło
+        // Rysowanie płytki
         ctx.fillStyle = mat.surface;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Tekstura
+        // Ziarno/Szczotkowanie
         if (mat.grain > 0) {
             ctx.strokeStyle = `rgba(255,255,255,${mat.grain})`;
             for(let i=0; i < canvas.height; i += 4) {
@@ -185,38 +171,75 @@
         }
 
         // Tekst
-        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.font = `bold ${fontSize}px ${font}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = mat.groove;
-
+        
         const lines = text.split('\n');
         const lineHeight = fontSize * 1.2;
         const totalHeight = lines.length * lineHeight;
         let startY = (canvas.height / 2) - (totalHeight / 2) + (lineHeight / 2);
 
-        let overflow = (totalHeight > canvas.height);
+        let isOverflow = (totalHeight > canvas.height);
 
         lines.forEach((line, index) => {
             const y = startY + (index * lineHeight);
-            if (ctx.measureText(line).width > canvas.width * 0.98) overflow = true;
-            
+            if (ctx.measureText(line).width > canvas.width * 0.95) isOverflow = true;
+
             ctx.shadowColor = "rgba(0,0,0,0.5)";
             ctx.shadowBlur = 4;
             ctx.shadowOffsetY = 2;
+            ctx.fillStyle = mat.groove;
             ctx.fillText(line, canvas.width / 2, y);
         });
 
+        // UI
         document.getElementById('mmLabel').innerText = (fontSize / PX_PER_MM).toFixed(1) + " mm";
-        document.getElementById('alert').style.display = overflow ? 'block' : 'none';
-        document.getElementById('canvas-wrapper').style.borderColor = overflow ? '#ef4444' : '#334155';
+        document.getElementById('status').className = isOverflow ? 'status-bar visible' : 'status-bar';
+        document.getElementById('canvas-wrapper').className = isOverflow ? 'error-border' : '';
+    }
+
+    function downloadPNG() {
+        const link = document.createElement('a');
+        link.download = 'grawer_podglad.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
+    function exportSVG() {
+        const wMM = document.getElementById('widthMM').value;
+        const hMM = document.getElementById('heightMM').value;
+        const fontSize = document.getElementById('sizePX').value;
+        const font = document.getElementById('fontSelect').value;
+        const lines = document.getElementById('textInput').value.split('\n');
+        
+        const lineHeight = fontSize * 1.2;
+        const totalHeight = lines.length * lineHeight;
+        let startY = ((hMM * PX_PER_MM) / 2) - (totalHeight / 2) + (lineHeight / 2);
+
+        let svgContent = `<svg width="${wMM}mm" height="${hMM}mm" viewBox="0 0 ${wMM * PX_PER_MM} ${hMM * PX_PER_MM}" xmlns="http://www.w3.org/2000/svg">`;
+        svgContent += `<rect width="100%" height="100%" fill="none" stroke="black" stroke-width="1"/>`; // Ramka cięcia
+        
+        lines.forEach((line, index) => {
+            const y = startY + (index * lineHeight);
+            // Dodajemy tekst jako ścieżki/obiekt wektorowy (dla maszyn CNC)
+            svgContent += `<text x="50%" y="${y}" font-family="${font}" font-size="${fontSize}" font-weight="bold" text-anchor="middle" fill="black">${line}</text>`;
+        });
+        
+        svgContent += `</svg>`;
+
+        const blob = new Blob([svgContent], {type: 'image/svg+xml'});
+        const link = document.createElement('a');
+        link.download = 'grawer_do_maszyny.svg';
+        link.href = URL.createObjectURL(blob);
+        link.click();
     }
 
     document.querySelectorAll('input, select, textarea').forEach(el => {
         el.addEventListener('input', draw);
     });
 
-    draw();
+    window.onload = draw;
 </script>
 
 </body>
