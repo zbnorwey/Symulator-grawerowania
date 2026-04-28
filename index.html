@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grawer Pro - Master Configurator</title>
+    <title>Grawer Pro - Ergonomiczny Konfigurator</title>
     <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
     <style>
         :root { --bg: #0f172a; --panel: #1e293b; --acc: #38bdf8; --plt: #f59e0b; }
@@ -13,44 +13,68 @@
         label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
         textarea, input, select { width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 12px; font-size: 16px; margin-bottom: 12px; outline: none; }
         
+        /* Styl wizualizacji */
+        #canvas-wrapper { width: 100%; background: #000; border-radius: 20px; border: 3px solid #334155; overflow: hidden; display: flex; justify-content: center; padding: 30px 0; margin-bottom: 10px; position: sticky; top: 0; z-index: 10; }
+        canvas { max-width: 90%; height: auto !important; box-shadow: 0 8px 20px rgba(0,0,0,0.6); }
+        
         .search-group { display: flex; gap: 8px; margin-bottom: 5px; }
         .btn-ok { background: var(--acc); color: #0f172a; border: none; border-radius: 12px; padding: 0 20px; font-weight: bold; cursor: pointer; }
         .status-msg { font-size: 11px; color: var(--acc); margin-bottom: 10px; display: block; text-align: center; height: 14px; }
         
-        #canvas-wrapper { width: 100%; background: #000; border-radius: 12px; border: 3px solid #334155; overflow: hidden; display: flex; justify-content: center; padding: 30px 0; position: relative; }
-        canvas { max-width: 90%; height: auto !important; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        
         .btn-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button.action { padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        
+        /* Podświetlenie pola tekstowego */
+        #textInput { border: 2px solid #334155; }
+        #textInput:focus { border-color: var(--acc); background: #1e293b; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="card">
-        <label>1. Rodzaj Tabliczki</label>
-        <select id="plateType" onchange="applyTemplate(this.value)">
-		    <option value="standard">✨ Standard (80x50mm)</option>
-            <option value="ozdobna">✨ Ozdobna (90x40mm)</option>
-            <option value="znamionowa">⚙️ Znamionowa (100x60mm)</option>
-            <option value="identyfikator">👤 Identyfikator (80x30mm)</option>
-            <option value="puchar">🏆 Pucharowa (50x20mm)</option>
-            <option value="adresowa">🏠 Adresowa (120x40mm)</option>
-        </select>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1">
+                <label>Rodzaj Tabliczki</label>
+                <select id="plateType" onchange="applyTemplate(this.value)">
+				    <option value="standard">✨ Standard (80x50mm)</option>
+                    <option value="ozdobna">✨ Ozdobna</option>
+                    <option value="znamionowa">⚙️ Znamionowa</option>
+                    <option value="identyfikator">👤 Identyfikator</option>
+                    <option value="puchar">🏆 Puchar</option>
+                    <option value="adresowa">🏠 Adresowa</option>
+                </select>
+            </div>
+            <div style="flex:1">
+                <label>Materiał</label>
+                <select id="materialType" onchange="draw()">
+                    <option value="gold">🟡 Mosiądz</option>
+                    <option value="silver">⚪ Aluminium</option>
+                    <option value="copper">🟠 Miedź</option>
+                    <option value="black">⚫ Czarny</option>
+                    <option value="steel">🔘 Stal</option>
+                </select>
+            </div>
+        </div>
 
-        <label>2. Materiał</label>
-        <select id="materialType" onchange="draw()">
-            <option value="gold">🟡 Mosiądz / Złoto</option>
-            <option value="silver">⚪ Aluminium / Srebro</option>
-            <option value="copper">🟠 Miedź / Brąz</option>
-            <option value="black">⚫ Czarny Laminat</option>
-            <option value="steel">🔘 Stal Szczotkowana</option>
-        </select>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1"><label>Szer. (mm)</label><input type="number" id="widthMM" value="90" oninput="draw()"></div>
+            <div style="flex:1"><label>Wys. (mm)</label><input type="number" id="heightMM" value="40" oninput="draw()"></div>
+        </div>
+    </div>
 
-        <label>3. Tekst graweru</label>
-        <textarea id="textInput" oninput="draw()">Grawer 2026</textarea>
+    <div id="canvas-wrapper">
+        <canvas id="engraveCanvas"></canvas>
+    </div>
 
-        <label>4. Czcionka</label>
+    <div class="card">
+        <label>Treść graweru</label>
+        <textarea id="textInput" rows="3" oninput="draw()" placeholder="Wpisz tekst...">Grawer 2026</textarea>
+
+        <label>Rozmiar tekstu: <span id="mmLabel">12 mm</span></label>
+        <input type="range" id="sizePX" min="10" max="300" value="60" oninput="draw()" style="width:100%; margin-bottom: 20px;">
+
+        <label>Czcionka</label>
         <select id="fontPicker" onchange="changeFont(this.value)">
             <option value="Sacramento">Vanessa (Sacramento)</option>
             <option value="Roboto">Roboto (Standard)</option>
@@ -70,22 +94,12 @@
         </select>
 
         <div class="search-group">
-            <input type="text" id="customFont" placeholder="Wpisz inną z Google Fonts..." 
+            <input type="text" id="customFont" placeholder="Nazwa z Google Fonts..." 
                    onkeydown="if(event.key==='Enter') changeFont(this.value)">
             <button class="btn-ok" onclick="changeFont(document.getElementById('customFont').value)">OK</button>
         </div>
         <span id="fontStatus" class="status-msg">Gotowy</span>
-
-        <div style="display: flex; gap: 10px;">
-            <div style="flex:1"><label>Szer. (mm)</label><input type="number" id="widthMM" value="90" oninput="draw()"></div>
-            <div style="flex:1"><label>Wys. (mm)</label><input type="number" id="heightMM" value="40" oninput="draw()"></div>
-        </div>
-        
-        <label>Rozmiar: <span id="mmLabel">12 mm</span></label>
-        <input type="range" id="sizePX" min="10" max="300" value="60" oninput="draw()" style="width:100%">
     </div>
-
-    <div id="canvas-wrapper"><canvas id="engraveCanvas"></canvas></div>
     
     <div class="btn-box">
         <button class="action" style="background:#334155;" onclick="downloadPNG()">ZAPISZ PNG</button>
@@ -127,7 +141,7 @@
     function changeFont(fontName) {
         if (!fontName) return;
         let formattedName = fontName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-        document.getElementById('fontStatus').innerText = "Ładowanie: " + formattedName + "...";
+        document.getElementById('fontStatus').innerText = "Ładowanie...";
         
         WebFont.load({
             google: { families: [formattedName] },
@@ -137,7 +151,7 @@
                 draw();
             },
             inactive: function() {
-                document.getElementById('fontStatus').innerText = "Błąd: Nie znaleziono czcionki";
+                document.getElementById('fontStatus').innerText = "Nie znaleziono czcionki";
                 draw();
             }
         });
@@ -153,17 +167,17 @@
         canvas.width = wMM * 5;
         canvas.height = hMM * 5;
 
-        // Tło materiału
+        // Tło
         ctx.fillStyle = mat.bg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Symulacja szczotkowania (subtelne paski)
+        // Tekstura
         ctx.strokeStyle = "rgba(255,255,255,0.1)";
         for(let i=0; i<canvas.height; i+=2) {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
         }
 
-        // Tekst
+        // Napis
         ctx.font = `${fontSize}px "${currentFont}"`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -198,7 +212,7 @@
 
     function downloadPNG() {
         const link = document.createElement('a');
-        link.download = 'podglad.png'; link.href = canvas.toDataURL(); link.click();
+        link.download = 'projekt.png'; link.href = canvas.toDataURL(); link.click();
     }
 
     window.onload = () => { changeFont('Sacramento'); };
