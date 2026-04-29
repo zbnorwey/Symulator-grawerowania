@@ -37,8 +37,8 @@
             <div style="flex:1">
                 <label>Rodzaj Tabliczki</label>
                 <select id="plateType" onchange="applyTemplate(this.value)">
-				    <option value="standard">✨ Standard (80x50mm)</option>
                     <option value="ozdobna">✨ Ozdobna</option>
+					<option value="standard">✨ Standard (80x50mm)</option>
                     <option value="znamionowa">⚙️ Znamionowa</option>
                     <option value="identyfikator">👤 Identyfikator</option>
                     <option value="puchar">🏆 Puchar</option>
@@ -121,8 +121,8 @@
     };
 
     const templates = {
-	    standard: { w: 80, h: 50, size: 60, mat: "silver" },
         ozdobna: { w: 90, h: 40, size: 60, mat: "gold" },
+		standard: { w: 80, h: 50, size: 60, mat: "silver" },
         znamionowa: { w: 100, h: 60, size: 45, mat: "silver" },
         identyfikator: { w: 80, h: 30, size: 40, mat: "black" },
         puchar: { w: 50, h: 20, size: 30, mat: "gold" },
