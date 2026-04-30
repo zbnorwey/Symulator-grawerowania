@@ -2,31 +2,21 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grawer Pro - Ergonomiczny Konfigurator</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grawer Pro - Twoja Lista Czcionek</title>
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
     <style>
         :root { --bg: #0f172a; --panel: #1e293b; --acc: #38bdf8; --plt: #f59e0b; }
-        body { background: var(--bg); color: #f8fafc; font-family: system-ui, sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        body { background: var(--bg); color: #f8fafc; font-family: sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         .app-container { width: 100%; max-width: 500px; }
         .card { background: var(--panel); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 10px; }
         label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
         textarea, input, select { width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 12px; font-size: 16px; margin-bottom: 12px; outline: none; }
-        
-        /* Styl wizualizacji */
-        #canvas-wrapper { width: 100%; background: #000; border-radius: 20px; border: 3px solid #334155; overflow: hidden; display: flex; justify-content: center; padding: 30px 0; margin-bottom: 10px; position: sticky; top: 0; z-index: 10; }
-        canvas { max-width: 90%; height: auto !important; box-shadow: 0 8px 20px rgba(0,0,0,0.6); }
-        
-        .search-group { display: flex; gap: 8px; margin-bottom: 5px; }
-        .btn-ok { background: var(--acc); color: #0f172a; border: none; border-radius: 12px; padding: 0 20px; font-weight: bold; cursor: pointer; }
-        .status-msg { font-size: 11px; color: var(--acc); margin-bottom: 10px; display: block; text-align: center; height: 14px; }
-        
-        .btn-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        #canvas-wrapper { width: 100%; background: #000; border-radius: 20px; border: 3px solid #334155; display: flex; justify-content: center; padding: 20px 0; margin-bottom: 10px; min-height: 150px; align-items: center; }
+        canvas { max-width: 95%; height: auto !important; }
+        .btn-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         button.action { padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; }
-        
-        /* Podświetlenie pola tekstowego */
-        #textInput { border: 2px solid #334155; }
-        #textInput:focus { border-color: var(--acc); background: #1e293b; }
+        .status { font-size: 11px; color: var(--acc); text-align: center; margin-bottom: 10px; height: 14px; }
     </style>
 </head>
 <body>
@@ -34,188 +24,158 @@
 <div class="app-container">
     <div class="card">
         <div style="display: flex; gap: 10px;">
-            <div style="flex:1">
-                <label>Rodzaj Tabliczki</label>
-                <select id="plateType" onchange="applyTemplate(this.value)">
-                    <option value="ozdobna">✨ Ozdobna</option>
-					<option value="standard">✨ Standard (80x50mm)</option>
-                    <option value="znamionowa">⚙️ Znamionowa</option>
-                    <option value="identyfikator">👤 Identyfikator</option>
-                    <option value="puchar">🏆 Puchar</option>
-                    <option value="adresowa">🏠 Adresowa</option>
+            <div style="flex:2">
+                <label>Materiał tabliczki</label>
+                <select id="mat" onchange="draw()">
+                    <option value="gold">🟡 Mosiądz (Złoty)</option>
+                    <option value="silver">⚪ Aluminium (Srebrny)</option>
+                    <option value="black">⚫ Czarny Laminat</option>
+                    <option value="steel">🔘 Stal Szczotkowana</option>
                 </select>
             </div>
-            <div style="flex:1">
-                <label>Materiał</label>
-                <select id="materialType" onchange="draw()">
-                    <option value="gold">🟡 Mosiądz</option>
-                    <option value="silver">⚪ Aluminium</option>
-                    <option value="copper">🟠 Miedź</option>
-                    <option value="black">⚫ Czarny</option>
-                    <option value="steel">🔘 Stal</option>
-                </select>
-            </div>
-        </div>
-
-        <div style="display: flex; gap: 10px;">
-            <div style="flex:1"><label>Szer. (mm)</label><input type="number" id="widthMM" value="90" oninput="draw()"></div>
-            <div style="flex:1"><label>Wys. (mm)</label><input type="number" id="heightMM" value="40" oninput="draw()"></div>
+            <div style="flex:1"><label>Szer (mm)</label><input type="number" id="w" value="80" oninput="draw()"></div>
+            <div style="flex:1"><label>Wys (mm)</label><input type="number" id="h" value="50" oninput="draw()"></div>
         </div>
     </div>
 
-    <div id="canvas-wrapper">
-        <canvas id="engraveCanvas"></canvas>
-    </div>
+    <div id="canvas-wrapper"><canvas id="c"></canvas></div>
+    <div id="msg" class="status">Inicjalizacja...</div>
 
     <div class="card">
         <label>Treść graweru</label>
-        <textarea id="textInput" rows="3" oninput="draw()" placeholder="Wpisz tekst...">Grawer 2026</textarea>
+        <textarea id="txt" rows="2" oninput="draw()">Grawer 2026</textarea>
 
-        <label>Rozmiar tekstu: <span id="mmLabel">12 mm</span></label>
-        <input type="range" id="sizePX" min="10" max="300" value="60" oninput="draw()" style="width:100%; margin-bottom: 20px;">
-
-        <label>Czcionka</label>
-        <select id="fontPicker" onchange="changeFont(this.value)">
-            <option value="Sacramento">Vanessa (Sacramento)</option>
-            <option value="Roboto">Roboto (Standard)</option>
-            <option value="Open Sans">Open Sans</option>
-            <option value="Lato">Lato</option>
-            <option value="Montserrat">Montserrat</option>
-            <option value="Oswald">Oswald</option>
-            <option value="Pacifico">Pacifico (Pisanka)</option>
-            <option value="Lobster">Lobster</option>
-            <option value="Anton">Anton (Gruba)</option>
-            <option value="Dancing Script">Dancing Script</option>
-            <option value="Playfair Display">Playfair Display</option>
-            <option value="Cinzel">Cinzel (Rzymska)</option>
-            <option value="Bangers">Bangers (Komiks)</option>
-            <option value="Orbitron">Orbitron (Modern)</option>
-            <option value="Permanent Marker">Marker</option>
-        </select>
-
-        <div class="search-group">
-            <input type="text" id="customFont" placeholder="Nazwa z Google Fonts..." 
-                   onkeydown="if(event.key==='Enter') changeFont(this.value)">
-            <button class="btn-ok" onclick="changeFont(document.getElementById('customFont').value)">OK</button>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:2">
+                <label>Czcionka</label>
+                <select id="fontPicker" onchange="loadFont(this.value)">
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/sacramento/Sacramento-Regular.ttf">Vanessa (Sacramento)</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/opensans/OpenSans%5Bwdth%2Cwght%5D.ttf">Open Sans</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/lato/Lato-Regular.ttf">Lato</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/oswald/Oswald%5Bwght%5D.ttf">Oswald</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/pacifico/Pacifico-Regular.ttf">Pacifico (Pisanka)</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/lobster/Lobster-Regular.ttf">Lobster</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/anton/Anton-Regular.ttf">Anton (Gruba)</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/dancingscript/DancingScript%5Bwght%5D.ttf">Dancing Script</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf">Playfair Display</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/bangers/Bangers-Regular.ttf">Bangers (Komiks)</option>
+                    <option value="https://raw.githubusercontent.com/google/fonts/main/ofl/orbitron/Orbitron%5Bwght%5D.ttf">Orbitron (Modern)</option>
+                </select>
+            </div>
+            <div style="flex:1">
+                <label>Linie</label>
+                <select id="ls" onchange="draw()">
+                    <option value="1">1L</option>
+                    <option value="2">2L</option>
+                    <option value="3">3L</option>
+                </select>
+            </div>
         </div>
-        <span id="fontStatus" class="status-msg">Gotowy</span>
+        <label style="margin-top:10px;">Rozmiar: <span id="mmSz">10</span> mm</label>
+        <input type="range" id="sz" min="20" max="200" value="60" oninput="draw()" style="width:100%">
     </div>
-    
+
     <div class="btn-box">
-        <button class="action" style="background:#334155;" onclick="downloadPNG()">ZAPISZ PNG</button>
+        <button class="action" style="background:#334155;" onclick="draw()">ODŚWIEŻ</button>
         <button class="action" style="background:var(--plt);" onclick="exportPLT()">EKSPORT PLT</button>
     </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('engraveCanvas');
+    const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
-    let currentFont = "Sacramento";
+    let fObj = null;
 
-    const materials = {
-        gold: { bg: "#d4af37", text: "#3d2b00" },
-        silver: { bg: "#c0c0c0", text: "#222222" },
-        copper: { bg: "#b87333", text: "#2a1506" },
-        black: { bg: "#000000", text: "#ffffff" },
-        steel: { bg: "#71797e", text: "#111111" }
+    const mats = {
+        gold: { b: "#d4af37", t: "#3d2b00" },
+        silver: { b: "#c0c0c0", t: "#1a1a1a" },
+        black: { b: "#0a0a0a", t: "#ffffff" }
     };
 
-    const templates = {
-        ozdobna: { w: 90, h: 40, size: 60, mat: "gold" },
-		standard: { w: 80, h: 50, size: 60, mat: "silver" },
-        znamionowa: { w: 100, h: 60, size: 45, mat: "silver" },
-        identyfikator: { w: 80, h: 30, size: 40, mat: "black" },
-        puchar: { w: 50, h: 20, size: 30, mat: "gold" },
-        adresowa: { w: 120, h: 40, size: 50, mat: "steel" }
-    };
-
-    function applyTemplate(type) {
-        const t = templates[type];
-        document.getElementById('widthMM').value = t.w;
-        document.getElementById('heightMM').value = t.h;
-        document.getElementById('sizePX').value = t.size;
-        document.getElementById('materialType').value = t.mat;
-        draw();
-    }
-
-    function changeFont(fontName) {
-        if (!fontName) return;
-        let formattedName = fontName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-        document.getElementById('fontStatus').innerText = "Ładowanie...";
-        
-        WebFont.load({
-            google: { families: [formattedName] },
-            active: function() {
-                currentFont = formattedName;
-                document.getElementById('fontStatus').innerText = "Aktywna: " + formattedName;
-                draw();
-            },
-            inactive: function() {
-                document.getElementById('fontStatus').innerText = "Nie znaleziono czcionki";
+    function loadFont(url) {
+        document.getElementById('msg').innerText = "Ładowanie czcionki...";
+        opentype.load(url, (err, f) => {
+            if (err) {
+                document.getElementById('msg').innerText = "Błąd pobierania czcionki.";
+                console.error(err);
+            } else {
+                fObj = f;
+                document.getElementById('msg').innerText = "Gotowy";
                 draw();
             }
         });
     }
 
     function draw() {
-        const wMM = parseInt(document.getElementById('widthMM').value) || 50;
-        const hMM = parseInt(document.getElementById('heightMM').value) || 20;
-        const fontSize = parseInt(document.getElementById('sizePX').value);
-        const text = document.getElementById('textInput').value;
-        const mat = materials[document.getElementById('materialType').value];
+        if (!fObj) return;
+
+        const wMM = parseInt(document.getElementById('w').value) || 100;
+        const hMM = parseInt(document.getElementById('h').value) || 40;
+        const size = parseInt(document.getElementById('sz').value);
+        const text = document.getElementById('txt').value || " ";
+        const m = mats[document.getElementById('mat').value];
+        const lines = parseInt(document.getElementById('ls').value);
 
         canvas.width = wMM * 5;
         canvas.height = hMM * 5;
+        document.getElementById('mmSz').innerText = (size / 5).toFixed(1);
 
-        // Tło
-        ctx.fillStyle = mat.bg;
+        ctx.fillStyle = m.b;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Tekstura
-        ctx.strokeStyle = "rgba(255,255,255,0.1)";
-        for(let i=0; i<canvas.height; i+=2) {
-            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+
+        const path = fObj.getPath(text, 0, 0, size);
+        const box = path.getBoundingBox();
+        const tx = (canvas.width / 2) - ((box.x1 + box.x2) / 2);
+        const ty = (canvas.height / 2) - ((box.y1 + box.y2) / 2);
+
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.strokeStyle = m.t;
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i < lines; i++) {
+            ctx.save();
+            ctx.translate(i * 0.6, 0); 
+            ctx.stroke(new Path2D(path.toPathData()));
+            ctx.restore();
         }
-
-        // Napis
-        ctx.font = `${fontSize}px "${currentFont}"`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillStyle = mat.text;
-        
-        const lines = text.split('\n');
-        const spacing = fontSize * 1.2;
-        let y = (canvas.height / 2) - ((lines.length - 1) * spacing / 2);
-
-        lines.forEach(line => {
-            ctx.fillText(line, canvas.width / 2, y);
-            y += spacing;
-        });
-
-        document.getElementById('mmLabel').innerText = (fontSize / 5).toFixed(1) + " mm";
+        ctx.restore();
     }
 
     function exportPLT() {
-        const wMM = document.getElementById('widthMM').value;
-        const hMM = document.getElementById('heightMM').value;
-        const sizeMM = document.getElementById('sizePX').value / 5;
-        const lines = document.getElementById('textInput').value.split('\n');
-        let plt = "IN;DF;PS0;SP1;";
-        lines.forEach((line, i) => {
-            let y = (hMM / 2) + ((lines.length * sizeMM) / 2) - (i * sizeMM * 1.3) - sizeMM;
-            plt += `PU${Math.round(wMM*0.2*40)},${Math.round(y*40)};SI${(sizeMM/10).toFixed(3)},${(sizeMM/10).toFixed(3)};LB${line}\x03;`;
-        });
-        const blob = new Blob([plt + "PU0,0;EC;"], {type: 'application/octet-stream'});
+        if (!fObj) return;
+        const w = parseInt(document.getElementById('w').value);
+        const h = parseInt(document.getElementById('h').value);
+        const size = parseInt(document.getElementById('sz').value);
+        const text = document.getElementById('txt').value;
+        const lineCount = parseInt(document.getElementById('ls').value);
+
+        const path = fObj.getPath(text, 0, 0, size);
+        const box = path.getBoundingBox();
+        const scale = 40 / 5;
+        const tx = (w * 40 / 2) - (((box.x1 + box.x2) / 2) * scale);
+        const ty = (h * 40 / 2) + (((box.y1 + box.y2) / 2) * scale);
+
+        let plt = "IN;DF;PS0;";
+        for (let l = 0; l < lineCount; l++) {
+            const off = l * 4;
+            path.commands.forEach(c => {
+                const x = Math.round(c.x * scale + tx + off);
+                const y = Math.round(ty - (c.y * scale));
+                if (c.type === 'M') plt += `PU${x},${y};`;
+                else if (c.type === 'L' || c.type === 'Q' || c.type === 'C') plt += `PD${x},${y};`;
+            });
+        }
+        plt += "PU0,0;EC;";
+        const blob = new Blob([plt], { type: 'application/octet-stream' });
         const link = document.createElement('a');
-        link.download = 'GRAW.PLT'; link.href = URL.createObjectURL(blob); link.click();
+        link.download = `GRAW_${text.substring(0,5)}.PLT`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
     }
 
-    function downloadPNG() {
-        const link = document.createElement('a');
-        link.download = 'projekt.png'; link.href = canvas.toDataURL(); link.click();
-    }
-
-    window.onload = () => { changeFont('Sacramento'); };
+    window.onload = () => loadFont(document.getElementById('fontPicker').value);
 </script>
+
 </body>
 </html>
