@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grawer Pro - Twoja Lista Czcionek</title>
+    <title>Grawer Pro - Export PLT</title>
     <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
     <style>
         :root { --bg: #0f172a; --panel: #1e293b; --acc: #38bdf8; --plt: #f59e0b; }
@@ -13,10 +13,44 @@
         label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
         textarea, input, select { width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 12px; font-size: 16px; margin-bottom: 12px; outline: none; }
         #canvas-wrapper { width: 100%; background: #000; border-radius: 20px; border: 3px solid #334155; display: flex; justify-content: center; padding: 20px 0; margin-bottom: 10px; min-height: 150px; align-items: center; }
-        canvas { max-width: 95%; height: auto !important; }
+        canvas { max-width: 95%; height: auto !important; cursor: crosshair; }
         .btn-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        button.action { padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        button.action { padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        button.action:active { transform: scale(0.95); }
         .status { font-size: 11px; color: var(--acc); text-align: center; margin-bottom: 10px; height: 14px; }
+		/* Styl okna prezentacji */
+        #client-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #modal-content {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+            #modal-canvas {
+            max-width: 90vw;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .close-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: var(--acc);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -63,21 +97,21 @@
                 </select>
             </div>
             <div style="flex:1">
-                <label>Linie</label>
+                <label>Gęstość (L)</label>
                 <select id="ls" onchange="draw()">
-                    <option value="1">1L</option>
-                    <option value="2">2L</option>
-                    <option value="3">3L</option>
+                    <option value="1">1x</option>
+                    <option value="2">2x</option>
+                    <option value="3">3x</option>
                 </select>
             </div>
         </div>
         <label style="margin-top:10px;">Rozmiar: <span id="mmSz">10</span> mm</label>
-        <input type="range" id="sz" min="20" max="200" value="60" oninput="draw()" style="width:100%">
+        <input type="range" id="sz" min="20" max="300" value="100" oninput="draw()" style="width:100%">
     </div>
 
     <div class="btn-box">
-        <button class="action" style="background:#334155;" onclick="draw()">ODŚWIEŻ</button>
-        <button class="action" style="background:var(--plt);" onclick="exportPLT()">EKSPORT PLT</button>
+        <button class="action" style="background:#334155;" onclick="showClientPreview()">PODGLĄD DLA KLIENTA</button>
+        <button class="action" style="background:var(--plt);" onclick="exportPLT()">GENERUJ PLT</button>
     </div>
 </div>
 
@@ -89,93 +123,156 @@
     const mats = {
         gold: { b: "#d4af37", t: "#3d2b00" },
         silver: { b: "#c0c0c0", t: "#1a1a1a" },
-        black: { b: "#0a0a0a", t: "#ffffff" }
+        black: { b: "#0a0a0a", t: "#ffffff" },
+        steel: { b: "#94a3b8", t: "#0f172a" }
     };
 
     function loadFont(url) {
         document.getElementById('msg').innerText = "Ładowanie czcionki...";
         opentype.load(url, (err, f) => {
             if (err) {
-                document.getElementById('msg').innerText = "Błąd pobierania czcionki.";
-                console.error(err);
+                document.getElementById('msg').innerText = "Błąd czcionki!";
             } else {
                 fObj = f;
-                document.getElementById('msg').innerText = "Gotowy";
+                document.getElementById('msg').innerText = "System gotowy";
                 draw();
             }
         });
     }
 
+    // Nowa funkcja pomocnicza do pobierania linii tekstu
+    function getLines() {
+        return document.getElementById('txt').value.split('\n').filter(l => l.length > 0);
+    }
+
     function draw() {
         if (!fObj) return;
 
-        const wMM = parseInt(document.getElementById('w').value) || 100;
-        const hMM = parseInt(document.getElementById('h').value) || 40;
-        const size = parseInt(document.getElementById('sz').value);
-        const text = document.getElementById('txt').value || " ";
-        const m = mats[document.getElementById('mat').value];
-        const lines = parseInt(document.getElementById('ls').value);
+        const wMM = parseInt(document.getElementById('w').value) || 80;
+        const hMM = parseInt(document.getElementById('h').value) || 50;
+        const fontSize = parseInt(document.getElementById('sz').value) || 40;
+        const m = mats[document.getElementById('mat').value] || mats.gold;
+        const density = parseInt(document.getElementById('ls').value);
+        const linesOfText = getLines();
 
         canvas.width = wMM * 5;
         canvas.height = hMM * 5;
-        document.getElementById('mmSz').innerText = (size / 5).toFixed(1);
+        document.getElementById('mmSz').innerText = (fontSize / 5).toFixed(1);
 
         ctx.fillStyle = m.b;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        const path = fObj.getPath(text, 0, 0, size);
-        const box = path.getBoundingBox();
-        const tx = (canvas.width / 2) - ((box.x1 + box.x2) / 2);
-        const ty = (canvas.height / 2) - ((box.y1 + box.y2) / 2);
+        // --- KLUCZOWA POPRAWKA CENTROWANIA ---
+        const lineHeight = fontSize * 1.1; 
+        const totalBlockHeight = linesOfText.length * lineHeight;
+        
+        // Obliczamy punkt startowy tak, aby ŚRODEK bloku był na ŚRODKU canvasu
+        // fontSize * 0.7 to korekta wizualna (fonty mają "naddatek" na dole/górze)
+        let currentY = (canvas.height / 2) - (totalBlockHeight / 2) + (fontSize * 0.35) + (lineHeight / 2);
 
-        ctx.save();
-        ctx.translate(tx, ty);
         ctx.strokeStyle = m.t;
         ctx.lineWidth = 1;
 
-        for (let i = 0; i < lines; i++) {
+        linesOfText.forEach((line) => {
+            const path = fObj.getPath(line, 0, 0, fontSize);
+            const box = path.getBoundingBox();
+            const lineWidth = box.x2 - box.x1;
+            const tx = (canvas.width / 2) - (lineWidth / 2) - box.x1;
+
             ctx.save();
-            ctx.translate(i * 0.6, 0); 
-            ctx.stroke(new Path2D(path.toPathData()));
+            ctx.translate(tx, currentY);
+            
+            const p2d = new Path2D(path.toPathData());
+            for (let i = 0; i < density; i++) {
+                ctx.save();
+                ctx.translate(i * 0.5, 0); 
+                ctx.stroke(p2d);
+                ctx.restore();
+            }
             ctx.restore();
-        }
-        ctx.restore();
+            currentY += lineHeight; 
+        });
+    }
+	
+	function showClientPreview() {
+        // Najpierw przerysuj główny canvas
+        draw();
+
+        const modal = document.getElementById('client-modal');
+        const mCanvas = document.getElementById('modal-canvas');
+        const mCtx = mCanvas.getContext('2d');
+
+        // Ustaw wielkość canvasu w oknie modalnym (większy dla lepszego efektu)
+        mCanvas.width = canvas.width * 2;
+        mCanvas.height = canvas.height * 2;
+
+        // Skopiuj obraz z głównego canvasu do modalnego
+        mCtx.drawImage(canvas, 0, 0, mCanvas.width, mCanvas.height);
+
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('client-modal').style.display = 'none';
     }
 
     function exportPLT() {
         if (!fObj) return;
-        const w = parseInt(document.getElementById('w').value);
-        const h = parseInt(document.getElementById('h').value);
-        const size = parseInt(document.getElementById('sz').value);
-        const text = document.getElementById('txt').value;
-        const lineCount = parseInt(document.getElementById('ls').value);
 
-        const path = fObj.getPath(text, 0, 0, size);
-        const box = path.getBoundingBox();
-        const scale = 40 / 5;
-        const tx = (w * 40 / 2) - (((box.x1 + box.x2) / 2) * scale);
-        const ty = (h * 40 / 2) + (((box.y1 + box.y2) / 2) * scale);
+        const wMM = parseInt(document.getElementById('w').value);
+        const hMM = parseInt(document.getElementById('h').value);
+        const fontSize = parseInt(document.getElementById('sz').value);
+        const density = parseInt(document.getElementById('ls').value);
+        const linesOfText = getLines();
 
-        let plt = "IN;DF;PS0;";
-        for (let l = 0; l < lineCount; l++) {
-            const off = l * 4;
-            path.commands.forEach(c => {
-                const x = Math.round(c.x * scale + tx + off);
-                const y = Math.round(ty - (c.y * scale));
-                if (c.type === 'M') plt += `PU${x},${y};`;
-                else if (c.type === 'L' || c.type === 'Q' || c.type === 'C') plt += `PD${x},${y};`;
-            });
-        }
-        plt += "PU0,0;EC;";
-        const blob = new Blob([plt], { type: 'application/octet-stream' });
+        const scale = 8; 
+        const pltLineHeight = fontSize * 1.1 * scale;
+        const pltTotalBlockHeight = linesOfText.length * pltLineHeight;
+        
+        // Wyśrodkowanie w pionie dla PLT (pamiętaj o odwróconej osi Y w grawerkach)
+        // Obliczamy środek pionowy w jednostkach plotera
+        const pltCenterY = (hMM * 40) / 2;
+        
+        // Startowa pozycja dla pierwszej linii w PLT:
+        let currentPltY = pltCenterY + (pltTotalBlockHeight / 2) - (fontSize * 0.35 * scale) - (pltLineHeight / 2);
+
+        let plt = "IN;DF;PS1;";
+
+        linesOfText.forEach((line) => {
+            const path = fObj.getPath(line, 0, 0, fontSize);
+            const box = path.getBoundingBox();
+            const lineWidth = (box.x2 - box.x1) * scale;
+            const offsetX = ((wMM * 40) / 2) - (lineWidth / 2) - (box.x1 * scale);
+
+            for (let d = 0; d < density; d++) {
+                const shift = d * 4; 
+                path.commands.forEach(cmd => {
+                    const x = Math.round(cmd.x * scale + offsetX + shift);
+                    const y = Math.round(currentPltY - (cmd.y * scale));
+
+                    if (cmd.type === 'M') plt += `PU${x},${y};`;
+                    else if (['L', 'Q', 'C'].includes(cmd.type)) plt += `PD${x},${y};`;
+                });
+            }
+            currentPltY -= pltLineHeight; // Idziemy w dół osi Y grawerki
+        });
+
+        plt += "PU0,0;SP0;EC;";
+        const blob = new Blob([plt], { type: 'text/plain' });
         const link = document.createElement('a');
-        link.download = `GRAW_${text.substring(0,5)}.PLT`;
+        link.download = `GRAW_CENTER_${Date.now()}.PLT`;
         link.href = URL.createObjectURL(blob);
         link.click();
     }
 
     window.onload = () => loadFont(document.getElementById('fontPicker').value);
 </script>
-
+<div id="client-modal">
+    <div id="modal-content">
+        <label style="font-size: 14px; margin-bottom: 20px;">WIZUALIZACJA DLA KLIENTA</label>
+        <canvas id="modal-canvas"></canvas>
+        <button class="close-btn" onclick="closeModal()">POWRÓT DO EDYCJI</button>
+    </div>
+</div>
 </body>
 </html>
