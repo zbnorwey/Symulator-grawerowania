@@ -115,6 +115,19 @@
             </div>
         </div>
 
+        <div class="checkbox-group">
+            <input type="checkbox" id="useArc" onchange="toggleArcControls(); draw()">
+            <label for="useArc">Tekst po łuku</label>
+        </div>
+
+        <div id="arcControls" style="display: none;">
+            <label style="margin-top:10px;">Kąt łuku: <span id="arcAngle">0</span>°</label>
+            <input type="range" id="arcAngleSlider" min="0" max="360" value="0" oninput="updateArcAngle(); draw()" style="width:100%">
+            
+            <label style="margin-top:10px;">Promień łuku: <span id="arcRadius">30</span> mm</label>
+            <input type="range" id="arcRadiusSlider" min="10" max="100" value="30" oninput="updateArcRadius(); draw()" style="width:100%">
+        </div>
+
         <div style="display: flex; gap: 10px;">
             <div style="flex:2">
                 <label>Czcionka</label>
@@ -163,6 +176,22 @@
         steel: { b: "#94a3b8", t: "#0f172a" }
     };
 
+    function toggleArcControls() {
+        const arcControls = document.getElementById('arcControls');
+        const useArc = document.getElementById('useArc').checked;
+        arcControls.style.display = useArc ? 'block' : 'none';
+    }
+
+    function updateArcAngle() {
+        const angle = document.getElementById('arcAngleSlider').value;
+        document.getElementById('arcAngle').innerText = angle;
+    }
+
+    function updateArcRadius() {
+        const radius = document.getElementById('arcRadiusSlider').value;
+        document.getElementById('arcRadius').innerText = radius;
+    }
+
     function loadFont(url) {
         const fontPicker = document.getElementById('fontPicker');
         const msg = document.getElementById('msg');
@@ -170,7 +199,6 @@
         fontPicker.disabled = true;
         msg.innerText = "⏳ Ładowanie czcionki...";
         
-        // Jeśli czcionka jest już w cache, załaduj ją od razu
         if (fontCache[url]) {
             fObj = fontCache[url];
             fontPicker.disabled = false;
@@ -179,7 +207,6 @@
             return;
         }
         
-        // Załaduj czcionkę z lokalnego folderu /fonts
         fetch(url)
             .then(response => {
                 if (!response.ok) {
@@ -210,9 +237,43 @@
             });
     }
 
-    // Nowa funkcja pomocnicza do pobierania linii tekstu
     function getLines() {
         return document.getElementById('txt').value.split('\n').filter(l => l.length > 0);
+    }
+
+    function drawTextOnArc(ctx, text, centerX, centerY, radius, angle, fontSize, isFlipped) {
+        const path = fObj.getPath(text, 0, 0, fontSize);
+        const box = path.getBoundingBox();
+        const textWidth = box.x2 - box.x1;
+        
+        // Konwertuj kąt ze stopni na radiany
+        const startAngle = (angle - 90) * Math.PI / 180;
+        const anglePerChar = (textWidth / radius) / text.length;
+        
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const charPath = fObj.getPath(char, 0, 0, fontSize);
+            const charBox = charPath.getBoundingBox();
+            const charWidth = charBox.x2 - charBox.x1;
+            
+            const charAngle = startAngle + (i * anglePerChar * radius / textWidth);
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(charAngle);
+            ctx.translate(0, -radius);
+            
+            if (isFlipped) {
+                ctx.scale(-1, 1);
+            }
+            
+            ctx.translate(-charWidth / 2, 0);
+            
+            const p2d = new Path2D(charPath.toPathData());
+            ctx.stroke(p2d);
+            
+            ctx.restore();
+        }
     }
 
     function draw() {
@@ -226,6 +287,9 @@
         const linesOfText = getLines();
         const flipHorizontal = document.getElementById('flipHorizontal').checked;
         const flipVertical = document.getElementById('flipVertical').checked;
+        const useArc = document.getElementById('useArc').checked;
+        const arcAngle = parseInt(document.getElementById('arcAngleSlider').value) || 0;
+        const arcRadius = parseInt(document.getElementById('arcRadiusSlider').value) || 30;
 
         canvas.width = wMM * 5;
         canvas.height = hMM * 5;
@@ -234,60 +298,67 @@
         ctx.fillStyle = m.b;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // --- KLUCZOWA POPRAWKA CENTROWANIA ---
-        const lineHeight = fontSize * 1.1; 
-        const totalBlockHeight = linesOfText.length * lineHeight;
-        
-        // Obliczamy punkt startowy tak, aby ŚRODEK bloku był na ŚRODKU canvasu
-        let currentY = (canvas.height / 2) - (totalBlockHeight / 2) + (fontSize * 0.35) + (lineHeight / 2);
-
         ctx.strokeStyle = m.t;
         ctx.lineWidth = 1;
 
-        linesOfText.forEach((line) => {
-            const path = fObj.getPath(line, 0, 0, fontSize);
-            const box = path.getBoundingBox();
-            const lineWidth = box.x2 - box.x1;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        if (useArc) {
+            // Tekst po łuku
+            linesOfText.forEach((line) => {
+                for (let d = 0; d < density; d++) {
+                    ctx.save();
+                    drawTextOnArc(ctx, line, centerX, centerY, arcRadius * 5, arcAngle, fontSize, flipHorizontal);
+                    ctx.restore();
+                }
+            });
+        } else {
+            // Tekst zwykły (liniowy)
+            const lineHeight = fontSize * 1.1; 
+            const totalBlockHeight = linesOfText.length * lineHeight;
             
-            ctx.save();
-            
-            // Zastosuj transformacje odbicia względem środka canvasu
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            
-            ctx.translate(centerX, centerY);
-            if (flipHorizontal) ctx.scale(-1, 1);
-            if (flipVertical) ctx.scale(1, -1);
-            ctx.translate(-centerX, -centerY);
-            
-            const tx = (canvas.width / 2) - (lineWidth / 2) - box.x1;
-            ctx.translate(tx, currentY);
-            
-            const p2d = new Path2D(path.toPathData());
-            for (let i = 0; i < density; i++) {
+            let currentY = (canvas.height / 2) - (totalBlockHeight / 2) + (fontSize * 0.35) + (lineHeight / 2);
+
+            linesOfText.forEach((line) => {
+                const path = fObj.getPath(line, 0, 0, fontSize);
+                const box = path.getBoundingBox();
+                const lineWidth = box.x2 - box.x1;
+                
                 ctx.save();
-                ctx.translate(i * 0.5, 0); 
-                ctx.stroke(p2d);
+                
+                // Zastosuj transformacje odbicia względem środka canvasu
+                ctx.translate(centerX, centerY);
+                if (flipHorizontal) ctx.scale(-1, 1);
+                if (flipVertical) ctx.scale(1, -1);
+                ctx.translate(-centerX, -centerY);
+                
+                const tx = (canvas.width / 2) - (lineWidth / 2) - box.x1;
+                ctx.translate(tx, currentY);
+                
+                const p2d = new Path2D(path.toPathData());
+                for (let i = 0; i < density; i++) {
+                    ctx.save();
+                    ctx.translate(i * 0.5, 0); 
+                    ctx.stroke(p2d);
+                    ctx.restore();
+                }
                 ctx.restore();
-            }
-            ctx.restore();
-            currentY += lineHeight; 
-        });
+                currentY += lineHeight; 
+            });
+        }
     }
 	
 	function showClientPreview() {
-        // Najpierw przerysuj główny canvas
         draw();
 
         const modal = document.getElementById('client-modal');
         const mCanvas = document.getElementById('modal-canvas');
         const mCtx = mCanvas.getContext('2d');
 
-        // Ustaw wielkość canvasu w oknie modalnym (większy dla lepszego efektu)
         mCanvas.width = canvas.width * 2;
         mCanvas.height = canvas.height * 2;
 
-        // Skopiuj obraz z głównego canvasu do modalnego
         mCtx.drawImage(canvas, 0, 0, mCanvas.width, mCanvas.height);
 
         modal.style.display = 'flex';
@@ -307,46 +378,86 @@
         const linesOfText = getLines();
         const flipHorizontal = document.getElementById('flipHorizontal').checked;
         const flipVertical = document.getElementById('flipVertical').checked;
+        const useArc = document.getElementById('useArc').checked;
+        const arcAngle = parseInt(document.getElementById('arcAngleSlider').value) || 0;
+        const arcRadius = parseInt(document.getElementById('arcRadiusSlider').value) || 30;
 
         const scale = 8; 
-        const pltLineHeight = fontSize * 1.1 * scale;
-        const pltTotalBlockHeight = linesOfText.length * pltLineHeight;
-        
-        // Wyśrodkowanie w pionie dla PLT
         const pltCenterY = (hMM * 40) / 2;
         const pltCenterX = (wMM * 40) / 2;
-        let currentPltY = pltCenterY + (pltTotalBlockHeight / 2) - (fontSize * 0.35 * scale) - (pltLineHeight / 2);
 
         let plt = "IN;DF;PS1;";
 
         linesOfText.forEach((line) => {
             const path = fObj.getPath(line, 0, 0, fontSize);
             const box = path.getBoundingBox();
-            const lineWidth = (box.x2 - box.x1) * scale;
-            const baseOffsetX = pltCenterX - (lineWidth / 2) - (box.x1 * scale);
-
-            for (let d = 0; d < density; d++) {
-                const shift = d * 4; 
-                path.commands.forEach(cmd => {
-                    let x = cmd.x * scale + baseOffsetX + shift;
-                    let y = currentPltY - (cmd.y * scale);
-                    
-                    // Odbicia
-                    if (flipHorizontal) {
-                        x = pltCenterX - (x - pltCenterX);
+            
+            if (useArc) {
+                // PLT dla tekstu po łuku
+                const lineWidth = (box.x2 - box.x1) * scale;
+                const radius = arcRadius * 5 * scale;
+                const startAngle = (arcAngle - 90) * Math.PI / 180;
+                const anglePerChar = (lineWidth / radius) / line.length;
+                
+                for (let d = 0; d < density; d++) {
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        const charPath = fObj.getPath(char, 0, 0, fontSize);
+                        const charAngle = startAngle + (i * anglePerChar * radius / lineWidth);
+                        
+                        charPath.commands.forEach(cmd => {
+                            let x = cmd.x * scale;
+                            let y = -cmd.y * scale - radius;
+                            
+                            const cosA = Math.cos(charAngle);
+                            const sinA = Math.sin(charAngle);
+                            const rotX = x * cosA - y * sinA;
+                            const rotY = x * sinA + y * cosA;
+                            
+                            x = pltCenterX + rotX;
+                            y = pltCenterY + rotY;
+                            
+                            if (flipHorizontal) x = pltCenterX - (x - pltCenterX);
+                            if (flipVertical) y = pltCenterY - (y - pltCenterY);
+                            
+                            x = Math.round(x);
+                            y = Math.round(y);
+                            
+                            if (cmd.type === 'M') plt += `PU${x},${y};`;
+                            else if (['L', 'Q', 'C'].includes(cmd.type)) plt += `PD${x},${y};`;
+                        });
                     }
-                    if (flipVertical) {
-                        y = pltCenterY - (y - pltCenterY);
-                    }
-                    
-                    x = Math.round(x);
-                    y = Math.round(y);
+                }
+            } else {
+                // PLT dla tekstu zwykłego (liniowego)
+                const lineHeight = fontSize * 1.1 * scale;
+                const pltTotalBlockHeight = linesOfText.length * lineHeight;
+                let currentPltY = pltCenterY + (pltTotalBlockHeight / 2) - (fontSize * 0.35 * scale) - (lineHeight / 2);
+                
+                const lineWidth = (box.x2 - box.x1) * scale;
+                const baseOffsetX = pltCenterX - (lineWidth / 2) - (box.x1 * scale);
 
-                    if (cmd.type === 'M') plt += `PU${x},${y};`;
-                    else if (['L', 'Q', 'C'].includes(cmd.type)) plt += `PD${x},${y};`;
-                });
+                for (let d = 0; d < density; d++) {
+                    const shift = d * 4; 
+                    path.commands.forEach(cmd => {
+                        let x = cmd.x * scale + baseOffsetX + shift;
+                        let y = currentPltY - (cmd.y * scale);
+                        
+                        if (flipHorizontal) {
+                            x = pltCenterX - (x - pltCenterX);
+                        }
+                        if (flipVertical) {
+                            y = pltCenterY - (y - pltCenterY);
+                        }
+                        
+                        x = Math.round(x);
+                        y = Math.round(y);
+
+                        if (cmd.type === 'M') plt += `PU${x},${y};`;
+                        else if (['L', 'Q', 'C'].includes(cmd.type)) plt += `PD${x},${y};`;
+                    });
+                }
             }
-            currentPltY -= pltLineHeight;
         });
 
         plt += "PU0,0;SP0;EC;";
