@@ -88,17 +88,17 @@
             <div style="flex:2">
                 <label>Czcionka</label>
                 <select id="fontPicker" onchange="loadFont(this.value); this.blur();">
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/sacramento@5.0.8/files/sacramento-latin-400-normal.woff2">Vanessa (Sacramento)</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/open-sans@5.0.8/files/open-sans-latin-400-normal.woff2">Open Sans</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/lato@5.0.8/files/lato-latin-400-normal.woff2">Lato</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/oswald@5.0.8/files/oswald-latin-400-normal.woff2">Oswald</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/pacifico@5.0.8/files/pacifico-latin-400-normal.woff2">Pacifico (Pisanka)</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/lobster@5.0.8/files/lobster-latin-400-normal.woff2">Lobster</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/anton@5.0.8/files/anton-latin-400-normal.woff2">Anton (Gruba)</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/dancing-script@5.0.8/files/dancing-script-latin-400-normal.woff2">Dancing Script</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5.0.8/files/playfair-display-latin-400-normal.woff2">Playfair Display</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/bangers@5.0.8/files/bangers-latin-400-normal.woff2">Bangers (Komiks)</option>
-                    <option value="https://cdn.jsdelivr.net/npm/@fontsource/orbitron@5.0.8/files/orbitron-latin-400-normal.woff2">Orbitron (Modern)</option>
+                    <option value="https://fonts.gstatic.com/s/sacramento/v23/buEzpo6gcdhwwEHOZ41Xcall_h6cT_X.ttf">Vanessa (Sacramento)</option>
+                    <option value="https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX5ZZjirDgPDQ.ttf">Open Sans</option>
+                    <option value="https://fonts.gstatic.com/s/lato/v24/S6uyw4BMUTPHjx4wWJWsFljA.ttf">Lato</option>
+                    <option value="https://fonts.gstatic.com/s/oswald/v55/TK3_WkUVV25L7gCn8Bw6RBJoe-rA.ttf">Oswald</option>
+                    <option value="https://fonts.gstatic.com/s/pacifico/v21/FwZY7-Qmy14u9lezJ-6G6MjQrwc.ttf">Pacifico (Pisanka)</option>
+                    <option value="https://fonts.gstatic.com/s/lobster/v29/neIVzCeow3V5E3_z_eZAP_-8_Q.ttf">Lobster</option>
+                    <option value="https://fonts.gstatic.com/s/anton/v32/1Ptgg87LROyAm0K0uciwmIl1_g6c.ttf">Anton (Gruba)</option>
+                    <option value="https://fonts.gstatic.com/s/dancingscript/v16/If2cXTr6YS-zF4S-kcSWSVi_sxFuIFUMzA.ttf">Dancing Script</option>
+                    <option value="https://fonts.gstatic.com/s/playfairdisplay/v30/nuFvD-vgNJn_4Vf_VOXc9MhkPsP33tJjHjIfbPGM7g.ttf">Playfair Display</option>
+                    <option value="https://fonts.gstatic.com/s/bangers/v16/Qw3-_Lt6izbttdyDQXnafBjgN0qx.ttf">Bangers (Komiks)</option>
+                    <option value="https://fonts.gstatic.com/s/orbitron/v32/yMJRMIlzdpvBhQQL_SC3X9yhF25-M3sQ.ttf">Orbitron (Modern)</option>
                 </select>
             </div>
             <div style="flex:1">
@@ -124,6 +124,7 @@
     const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
     let fObj = null;
+    let fontCache = {};
 
     const mats = {
         gold: { b: "#d4af37", t: "#3d2b00" },
@@ -134,22 +135,49 @@
 
     function loadFont(url) {
         const fontPicker = document.getElementById('fontPicker');
-        fontPicker.disabled = true;
-        document.getElementById('msg').innerText = "Ładowanie czcionki...";
+        const msg = document.getElementById('msg');
         
-        opentype.load(url, (err, f) => {
+        fontPicker.disabled = true;
+        msg.innerText = "⏳ Ładowanie czcionki...";
+        
+        // Jeśli czcionka jest już w cache, załaduj ją od razu
+        if (fontCache[url]) {
+            fObj = fontCache[url];
             fontPicker.disabled = false;
-            
-            if (err) {
-                console.error("Błąd ładowania czcionki:", err);
-                document.getElementById('msg').innerText = "⚠️ Błąd czcionki - spróbuj inną!";
+            msg.innerText = "✓ System gotowy";
+            draw();
+            return;
+        }
+        
+        // Załaduj czcionkę z CDN Google Fonts
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.arrayBuffer();
+            })
+            .then(arrayBuffer => {
+                try {
+                    const font = opentype.parse(arrayBuffer);
+                    fontCache[url] = font;
+                    fObj = font;
+                    fontPicker.disabled = false;
+                    msg.innerText = "✓ System gotowy";
+                    draw();
+                } catch (err) {
+                    console.error("Błąd parsowania czcionki:", err);
+                    fontPicker.disabled = false;
+                    msg.innerText = "⚠️ Błąd czcionki - spróbuj inną!";
+                    fObj = null;
+                }
+            })
+            .catch(err => {
+                console.error("Błąd pobierania czcionki:", err);
+                fontPicker.disabled = false;
+                msg.innerText = "⚠️ Błąd połączenia - sprawdź Internet!";
                 fObj = null;
-            } else {
-                fObj = f;
-                document.getElementById('msg').innerText = "✓ System gotowy";
-                draw();
-            }
-        });
+            });
     }
 
     // Nowa funkcja pomocnicza do pobierania linii tekstu
