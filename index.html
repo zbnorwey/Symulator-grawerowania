@@ -4,85 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grawer Pro - Export PLT</title>
-    <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
     <style>
         :root { --bg: #0f172a; --panel: #1e293b; --acc: #38bdf8; --plt: #f59e0b; }
         body { background: var(--bg); color: #f8fafc; font-family: sans-serif; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         .app-container { width: 100%; max-width: 500px; }
-        .card { background: var(--panel); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 10px; }
+        .card { background: var(--panel); padding: 15px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,.3); margin-bottom: 10px; }
         label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
         textarea, input, select { width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155; color: white; padding: 12px; border-radius: 12px; font-size: 16px; margin-bottom: 10px; font-family: inherit; }
-        textarea:focus, input:focus, select:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 8px rgba(56, 189, 248, 0.3); }
+        textarea:focus, input:focus, select:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 8px rgba(56,189,248,.3); }
         #canvas-wrapper { width: 100%; background: #000; border-radius: 20px; border: 3px solid #334155; display: flex; justify-content: center; padding: 20px 0; margin-bottom: 10px; min-height: 150px; }
         canvas { max-width: 95%; height: auto !important; cursor: crosshair; }
         .btn-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        button.action { padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
-        button.action:active { transform: scale(0.95); }
+        button.action { padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; transition: .2s; }
+        button.action:active { transform: scale(.95); }
         .status { font-size: 11px; color: var(--acc); text-align: center; margin-bottom: 10px; height: 14px; }
-        /* Styl okna prezentacji */
-        #client-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        #modal-content {
-            background: #1e293b;
-            padding: 40px;
-            border-radius: 30px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-        #modal-canvas {
-            max-width: 90vw;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .close-btn {
-            margin-top: 20px;
-            padding: 12px 30px;
-            background: var(--acc);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #fontPicker:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .checkbox-group input[type="checkbox"] {
-            width: auto;
-            margin: 0;
-            cursor: pointer;
-        }
-        .checkbox-group label {
-            margin: 0;
-            font-size: 12px;
-            display: inline;
-        }
-        .checkbox-row {
-            display: flex;
-            gap: 20px;
-        }
+        #client-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        #modal-content { background: #1e293b; padding: 40px; border-radius: 30px; box-shadow: 0 0 50px rgba(0,0,0,.5); text-align: center; }
+        #modal-canvas { max-width: 90vw; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+        .close-btn { margin-top: 20px; padding: 12px 30px; background: var(--acc); border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; }
+        #fontPicker:disabled { opacity: .6; cursor: not-allowed; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .checkbox-group input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; }
+        .checkbox-group label { margin: 0; font-size: 12px; display: inline; }
+        .checkbox-row { display: flex; gap: 20px; }
     </style>
 </head>
 <body>
-
 <div class="app-container">
     <div class="card">
-        <div style="display: flex; gap: 10px;">
+        <div style="display:flex;gap:10px">
             <div style="flex:2">
                 <label>Materiał tabliczki</label>
                 <select id="mat" onchange="draw()">
@@ -92,13 +43,13 @@
                     <option value="steel">🔘 Stal Szczotkowana</option>
                 </select>
             </div>
-            <div style="flex:1"><label>Szer (mm)</label><input type="number" id="w" value="80" oninput="draw()"></div>
-            <div style="flex:1"><label>Wys (mm)</label><input type="number" id="h" value="50" oninput="draw()"></div>
+            <div style="flex:1"><label>Szer. (mm)</label><input type="number" id="w" value="80" min="1" oninput="draw()"></div>
+            <div style="flex:1"><label>Wys. (mm)</label><input type="number" id="h" value="50" min="1" oninput="draw()"></div>
         </div>
     </div>
 
     <div id="canvas-wrapper"><canvas id="c"></canvas></div>
-    <div id="msg" class="status">Inicjalizacja...</div>
+    <div id="msg" class="status">Inicjalizacja…</div>
 
     <div class="card">
         <label>Treść graweru</label>
@@ -120,18 +71,18 @@
             <label for="useArc">Tekst po łuku</label>
         </div>
 
-        <div id="arcControls" style="display: none;">
-            <label style="margin-top:10px;">Kąt łuku: <span id="arcAngle">0</span>°</label>
-            <input type="range" id="arcAngleSlider" min="0" max="360" value="0" oninput="updateArcAngle(); draw()" style="width:100%">
-            
-            <label style="margin-top:10px;">Promień łuku: <span id="arcRadius">30</span> mm</label>
-            <input type="range" id="arcRadiusSlider" min="10" max="100" value="30" oninput="updateArcRadius(); draw()" style="width:100%">
+        <div id="arcControls" style="display:none">
+            <label style="margin-top:10px">Kąt łuku: <span id="arcAngle">0</span>°</label>
+            <input type="range" id="arcAngleSlider" min="0" max="360" value="0" oninput="updateArcAngle(); draw()">
+
+            <label style="margin-top:10px">Promień łuku: <span id="arcRadius">30</span> mm</label>
+            <input type="range" id="arcRadiusSlider" min="10" max="100" value="30" oninput="updateArcRadius(); draw()">
         </div>
 
-        <div style="display: flex; gap: 10px;">
+        <div style="display:flex;gap:10px">
             <div style="flex:2">
                 <label>Czcionka</label>
-                <select id="fontPicker" onchange="loadFont(this.value); this.blur();">
+                <select id="fontPicker" onchange="loadFont(this.value); this.blur()">
                     <option value="fonts/HennyPenny-Regular.ttf">Henny Penny</option>
                     <option value="fonts/ImperialScript-Regular.ttf">Imperial Script</option>
                     <option value="fonts/LavishlyYours-Regular.ttf">Lavishly Yours</option>
@@ -145,340 +96,383 @@
                 </select>
             </div>
             <div style="flex:1">
-                <label>Gęstość (L)</label>
+                <label>Gęstość</label>
                 <select id="ls" onchange="draw()">
-                    <option value="1">1x</option>
-                    <option value="2">2x</option>
-                    <option value="3">3x</option>
+                    <option value="1">1×</option>
+                    <option value="2">2×</option>
+                    <option value="3">3×</option>
                 </select>
             </div>
         </div>
-        <label style="margin-top:10px;">Rozmiar: <span id="mmSz">10</span> mm</label>
-        <input type="range" id="sz" min="20" max="300" value="100" oninput="draw()" style="width:100%">
+
+        <label style="margin-top:10px">Rozmiar: <span id="mmSz">10</span> mm</label>
+        <input type="range" id="sz" min="20" max="300" value="100" oninput="draw()">
     </div>
 
     <div class="btn-box">
-        <button class="action" style="background:#334155;" onclick="showClientPreview()">PODGLĄD DLA KLIENTA</button>
-        <button class="action" style="background:var(--plt);" onclick="exportPLT()">GENERUJ PLT</button>
+        <button class="action" style="background:#334155" onclick="showClientPreview()">PODGLĄD DLA KLIENTA</button>
+        <button class="action" style="background:var(--plt)" onclick="exportPLT()">GENERUJ PLT</button>
     </div>
 </div>
 
-<script>
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
-    let fObj = null;
-    let fontCache = {};
-
-    const mats = {
-        gold: { b: "#d4af37", t: "#3d2b00" },
-        silver: { b: "#c0c0c0", t: "#1a1a1a" },
-        black: { b: "#0a0a0a", t: "#ffffff" },
-        steel: { b: "#94a3b8", t: "#0f172a" }
-    };
-
-    function toggleArcControls() {
-        const arcControls = document.getElementById('arcControls');
-        const useArc = document.getElementById('useArc').checked;
-        arcControls.style.display = useArc ? 'block' : 'none';
-    }
-
-    function updateArcAngle() {
-        const angle = document.getElementById('arcAngleSlider').value;
-        document.getElementById('arcAngle').innerText = angle;
-    }
-
-    function updateArcRadius() {
-        const radius = document.getElementById('arcRadiusSlider').value;
-        document.getElementById('arcRadius').innerText = radius;
-    }
-
-    function loadFont(url) {
-        const fontPicker = document.getElementById('fontPicker');
-        const msg = document.getElementById('msg');
-        
-        fontPicker.disabled = true;
-        msg.innerText = "⏳ Ładowanie czcionki...";
-        
-        if (fontCache[url]) {
-            fObj = fontCache[url];
-            fontPicker.disabled = false;
-            msg.innerText = "✓ System gotowy";
-            draw();
-            return;
-        }
-        
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                return response.arrayBuffer();
-            })
-            .then(arrayBuffer => {
-                try {
-                    const font = opentype.parse(arrayBuffer);
-                    fontCache[url] = font;
-                    fObj = font;
-                    fontPicker.disabled = false;
-                    msg.innerText = "✓ System gotowy";
-                    draw();
-                } catch (err) {
-                    console.error("Błąd parsowania czcionki:", err);
-                    fontPicker.disabled = false;
-                    msg.innerText = "⚠️ Błąd czcionki - spróbuj inną!";
-                    fObj = null;
-                }
-            })
-            .catch(err => {
-                console.error("Błąd pobierania czcionki:", err);
-                fontPicker.disabled = false;
-                msg.innerText = "⚠️ Błąd połączenia - sprawdź Internet!";
-                fObj = null;
-            });
-    }
-
-    function getLines() {
-        return document.getElementById('txt').value.split('\n').filter(l => l.length > 0);
-    }
-
-    function drawTextOnArc(ctx, text, centerX, centerY, radius, angle, fontSize, flipHorizontal, flipVertical) {
-        const path = fObj.getPath(text, 0, 0, fontSize);
-        const box = path.getBoundingBox();
-        const textWidth = box.x2 - box.x1;
-        
-        // Konwertuj kąt ze stopni na radiany
-        const startAngle = (angle - 90) * Math.PI / 180;
-        const anglePerChar = (textWidth / radius) / text.length;
-        
-        for (let i = 0; i < text.length; i++) {
-            const char = text[i];
-            const charPath = fObj.getPath(char, 0, 0, fontSize);
-            const charBox = charPath.getBoundingBox();
-            const charWidth = charBox.x2 - charBox.x1;
-            
-            const charAngle = startAngle + (i * anglePerChar * radius / textWidth);
-            
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            
-            // Zastosuj odbicia
-            if (flipHorizontal) ctx.scale(-1, 1);
-            if (flipVertical) ctx.scale(1, -1);
-            
-            ctx.rotate(charAngle);
-            ctx.translate(0, -radius);
-            
-            ctx.translate(-charWidth / 2, 0);
-            
-            const p2d = new Path2D(charPath.toPathData());
-            ctx.stroke(p2d);
-            
-            ctx.restore();
-        }
-    }
-
-    function draw() {
-        if (!fObj) return;
-
-        const wMM = parseInt(document.getElementById('w').value) || 80;
-        const hMM = parseInt(document.getElementById('h').value) || 50;
-        const fontSize = parseInt(document.getElementById('sz').value) || 40;
-        const m = mats[document.getElementById('mat').value] || mats.gold;
-        const density = parseInt(document.getElementById('ls').value);
-        const linesOfText = getLines();
-        const flipHorizontal = document.getElementById('flipHorizontal').checked;
-        const flipVertical = document.getElementById('flipVertical').checked;
-        const useArc = document.getElementById('useArc').checked;
-        const arcAngle = parseInt(document.getElementById('arcAngleSlider').value) || 0;
-        const arcRadius = parseInt(document.getElementById('arcRadiusSlider').value) || 30;
-
-        canvas.width = wMM * 5;
-        canvas.height = hMM * 5;
-        document.getElementById('mmSz').innerText = (fontSize / 5).toFixed(1);
-
-        ctx.fillStyle = m.b;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.strokeStyle = m.t;
-        ctx.lineWidth = 1;
-
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        if (useArc) {
-            // Tekst po łuku
-            linesOfText.forEach((line) => {
-                for (let d = 0; d < density; d++) {
-                    ctx.save();
-                    drawTextOnArc(ctx, line, centerX, centerY, arcRadius * 5, arcAngle, fontSize, flipHorizontal, flipVertical);
-                    ctx.restore();
-                }
-            });
-        } else {
-            // Tekst zwykły (liniowy)
-            const lineHeight = fontSize * 1.1; 
-            const totalBlockHeight = linesOfText.length * lineHeight;
-            
-            let currentY = (canvas.height / 2) - (totalBlockHeight / 2) + (fontSize * 0.35) + (lineHeight / 2);
-
-            linesOfText.forEach((line) => {
-                const path = fObj.getPath(line, 0, 0, fontSize);
-                const box = path.getBoundingBox();
-                const lineWidth = box.x2 - box.x1;
-                
-                ctx.save();
-                
-                // Zastosuj transformacje odbicia względem środka canvasu
-                ctx.translate(centerX, centerY);
-                if (flipHorizontal) ctx.scale(-1, 1);
-                if (flipVertical) ctx.scale(1, -1);
-                ctx.translate(-centerX, -centerY);
-                
-                const tx = (canvas.width / 2) - (lineWidth / 2) - box.x1;
-                ctx.translate(tx, currentY);
-                
-                const p2d = new Path2D(path.toPathData());
-                for (let i = 0; i < density; i++) {
-                    ctx.save();
-                    ctx.translate(i * 0.5, 0); 
-                    ctx.stroke(p2d);
-                    ctx.restore();
-                }
-                ctx.restore();
-                currentY += lineHeight; 
-            });
-        }
-    }
-	
-	function showClientPreview() {
-        draw();
-
-        const modal = document.getElementById('client-modal');
-        const mCanvas = document.getElementById('modal-canvas');
-        const mCtx = mCanvas.getContext('2d');
-
-        mCanvas.width = canvas.width * 2;
-        mCanvas.height = canvas.height * 2;
-
-        mCtx.drawImage(canvas, 0, 0, mCanvas.width, mCanvas.height);
-
-        modal.style.display = 'flex';
-    }
-
-    function closeModal() {
-        document.getElementById('client-modal').style.display = 'none';
-    }
-
-    function exportPLT() {
-        if (!fObj) return;
-
-        const wMM = parseInt(document.getElementById('w').value);
-        const hMM = parseInt(document.getElementById('h').value);
-        const fontSize = parseInt(document.getElementById('sz').value);
-        const density = parseInt(document.getElementById('ls').value);
-        const linesOfText = getLines();
-        const flipHorizontal = document.getElementById('flipHorizontal').checked;
-        const flipVertical = document.getElementById('flipVertical').checked;
-        const useArc = document.getElementById('useArc').checked;
-        const arcAngle = parseInt(document.getElementById('arcAngleSlider').value) || 0;
-        const arcRadius = parseInt(document.getElementById('arcRadiusSlider').value) || 30;
-
-        const scale = 8; 
-        const pltCenterY = (hMM * 40) / 2;
-        const pltCenterX = (wMM * 40) / 2;
-
-        let plt = "IN;DF;PS1;";
-
-        linesOfText.forEach((line) => {
-            const path = fObj.getPath(line, 0, 0, fontSize);
-            const box = path.getBoundingBox();
-            
-            if (useArc) {
-                // PLT dla tekstu po łuku
-                const lineWidth = (box.x2 - box.x1) * scale;
-                const radius = arcRadius * 5 * scale;
-                const startAngle = (arcAngle - 90) * Math.PI / 180;
-                const anglePerChar = (lineWidth / radius) / line.length;
-                
-                for (let d = 0; d < density; d++) {
-                    for (let i = 0; i < line.length; i++) {
-                        const char = line[i];
-                        const charPath = fObj.getPath(char, 0, 0, fontSize);
-                        const charAngle = startAngle + (i * anglePerChar * radius / lineWidth);
-                        
-                        charPath.commands.forEach(cmd => {
-                            let x = cmd.x * scale;
-                            let y = -cmd.y * scale - radius;
-                            
-                            // Odbicia przed rotacją
-                            if (flipHorizontal) x = -x;
-                            if (flipVertical) y = -y;
-                            
-                            // Rotacja
-                            const cosA = Math.cos(charAngle);
-                            const sinA = Math.sin(charAngle);
-                            const rotX = x * cosA - y * sinA;
-                            const rotY = x * sinA + y * cosA;
-                            
-                            x = pltCenterX + rotX;
-                            y = pltCenterY + rotY;
-                            
-                            x = Math.round(x);
-                            y = Math.round(y);
-                            
-                            if (cmd.type === 'M') plt += `PU${x},${y};`;
-                            else if (['L', 'Q', 'C'].includes(cmd.type)) plt += `PD${x},${y};`;
-                        });
-                    }
-                }
-            } else {
-                // PLT dla tekstu zwykłego (liniowego)
-                const lineHeight = fontSize * 1.1 * scale;
-                const pltTotalBlockHeight = linesOfText.length * lineHeight;
-                let currentPltY = pltCenterY + (pltTotalBlockHeight / 2) - (fontSize * 0.35 * scale) - (lineHeight / 2);
-                
-                const lineWidth = (box.x2 - box.x1) * scale;
-                const baseOffsetX = pltCenterX - (lineWidth / 2) - (box.x1 * scale);
-
-                for (let d = 0; d < density; d++) {
-                    const shift = d * 4; 
-                    path.commands.forEach(cmd => {
-                        let x = cmd.x * scale + baseOffsetX + shift;
-                        let y = currentPltY - (cmd.y * scale);
-                        
-                        if (flipHorizontal) {
-                            x = pltCenterX - (x - pltCenterX);
-                        }
-                        if (flipVertical) {
-                            y = pltCenterY - (y - pltCenterY);
-                        }
-                        
-                        x = Math.round(x);
-                        y = Math.round(y);
-
-                        if (cmd.type === 'M') plt += `PU${x},${y};`;
-                        else if (['L', 'Q', 'C'].includes(cmd.type)) plt += `PD${x},${y};`;
-                    });
-                }
-            }
-        });
-
-        plt += "PU0,0;SP0;EC;";
-        const blob = new Blob([plt], { type: 'text/plain' });
-        const link = document.createElement('a');
-        link.download = `GRAW_CENTER_${Date.now()}.PLT`;
-        link.href = URL.createObjectURL(blob);
-        link.click();
-    }
-
-    window.onload = () => loadFont(document.getElementById('fontPicker').value);
-</script>
 <div id="client-modal">
     <div id="modal-content">
-        <label style="font-size: 14px; margin-bottom: 20px;">WIZUALIZACJA DLA KLIENTA</label>
+        <label style="font-size:14px;margin-bottom:20px">WIZUALIZACJA DLA KLIENTA</label>
         <canvas id="modal-canvas"></canvas>
         <button class="close-btn" onclick="closeModal()">POWRÓT DO EDYCJI</button>
     </div>
 </div>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+let fObj = null;
+const fontCache = {};
+
+const mats = {
+    gold: { b: "#d4af37", t: "#3d2b00" },
+    silver: { b: "#c0c0c0", t: "#1a1a1a" },
+    black: { b: "#0a0a0a", t: "#ffffff" },
+    steel: { b: "#94a3b8", t: "#0f172a" }
+};
+
+function toggleArcControls() {
+    document.getElementById("arcControls").style.display =
+        document.getElementById("useArc").checked ? "block" : "none";
+}
+
+function updateArcAngle() {
+    document.getElementById("arcAngle").textContent =
+        document.getElementById("arcAngleSlider").value;
+}
+
+function updateArcRadius() {
+    document.getElementById("arcRadius").textContent =
+        document.getElementById("arcRadiusSlider").value;
+}
+
+function getLines() {
+    return document.getElementById("txt").value
+        .split("\n")
+        .map(line => line.trimEnd())
+        .filter(Boolean);
+}
+
+function loadFont(url) {
+    const fontPicker = document.getElementById("fontPicker");
+    const msg = document.getElementById("msg");
+
+    fontPicker.disabled = true;
+    msg.textContent = "⏳ Ładowanie czcionki…";
+
+    if (fontCache[url]) {
+        fObj = fontCache[url];
+        fontPicker.disabled = false;
+        msg.textContent = "✓ System gotowy";
+        draw();
+        return;
+    }
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.arrayBuffer();
+        })
+        .then(buffer => {
+            fObj = opentype.parse(buffer);
+            fontCache[url] = fObj;
+            fontPicker.disabled = false;
+            msg.textContent = "✓ System gotowy";
+            draw();
+        })
+        .catch(error => {
+            console.error("Błąd ładowania czcionki:", error);
+            fObj = null;
+            fontPicker.disabled = false;
+            msg.textContent = "⚠️ Nie udało się załadować czcionki";
+        });
+}
+
+/* Wyznacza pozycję i obrót każdego znaku zgodnie z jego rzeczywistą szerokością. */
+function getArcGlyphs(text, radius, angle, fontSize) {
+    const characters = [...text];
+    const advances = characters.map(char => fObj.getAdvanceWidth(char, fontSize));
+    const totalAdvance = advances.reduce((sum, width) => sum + width, 0);
+    const baseAngle = (angle - 90) * Math.PI / 180;
+    let cursor = -totalAdvance / 2;
+
+    return characters.map((char, index) => {
+        const advance = advances[index];
+        const path = fObj.getPath(char, 0, 0, fontSize);
+        const box = path.getBoundingBox();
+
+        const glyph = {
+            path,
+            width: box.x2 - box.x1,
+            radius,
+            angle: baseAngle + (cursor + advance / 2) / radius
+        };
+
+        cursor += advance;
+        return glyph;
+    });
+}
+
+function drawTextOnArc(text, centerX, centerY, radius, angle, fontSize, flipHorizontal, flipVertical, density) {
+    getArcGlyphs(text, radius, angle, fontSize).forEach(glyph => {
+        for (let d = 0; d < density; d++) {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            if (flipHorizontal) ctx.scale(-1, 1);
+            if (flipVertical) ctx.scale(1, -1);
+
+            ctx.rotate(glyph.angle);
+            ctx.translate(0, -glyph.radius - d * 0.5);
+            ctx.translate(-glyph.width / 2, 0);
+            ctx.stroke(new Path2D(glyph.path.toPathData()));
+            ctx.restore();
+        }
+    });
+}
+
+function draw() {
+    if (!fObj) return;
+
+    const wMM = Math.max(1, parseInt(document.getElementById("w").value, 10) || 80);
+    const hMM = Math.max(1, parseInt(document.getElementById("h").value, 10) || 50);
+    const fontSize = parseInt(document.getElementById("sz").value, 10) || 100;
+    const density = parseInt(document.getElementById("ls").value, 10) || 1;
+    const lines = getLines();
+    const material = mats[document.getElementById("mat").value] || mats.gold;
+    const flipHorizontal = document.getElementById("flipHorizontal").checked;
+    const flipVertical = document.getElementById("flipVertical").checked;
+    const useArc = document.getElementById("useArc").checked;
+    const arcAngle = parseInt(document.getElementById("arcAngleSlider").value, 10) || 0;
+    const arcRadius = parseInt(document.getElementById("arcRadiusSlider").value, 10) || 30;
+
+    canvas.width = wMM * 5;
+    canvas.height = hMM * 5;
+    document.getElementById("mmSz").textContent = (fontSize / 5).toFixed(1);
+
+    ctx.fillStyle = material.b;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = material.t;
+    ctx.lineWidth = 1;
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const lineHeight = fontSize * 1.1;
+
+    if (useArc) {
+        lines.forEach((line, index) => {
+            const radius = arcRadius * 5 + (index - (lines.length - 1) / 2) * lineHeight;
+            if (radius > fontSize) {
+                drawTextOnArc(line, centerX, centerY, radius, arcAngle, fontSize, flipHorizontal, flipVertical, density);
+            }
+        });
+        return;
+    }
+
+    const totalBlockHeight = lines.length * lineHeight;
+    let currentY = centerY - totalBlockHeight / 2 + fontSize * .35 + lineHeight / 2;
+
+    lines.forEach(line => {
+        const path = fObj.getPath(line, 0, 0, fontSize);
+        const box = path.getBoundingBox();
+        const lineWidth = box.x2 - box.x1;
+        const x = centerX - lineWidth / 2 - box.x1;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        if (flipHorizontal) ctx.scale(-1, 1);
+        if (flipVertical) ctx.scale(1, -1);
+        ctx.translate(-centerX, -centerY);
+        ctx.translate(x, currentY);
+
+        for (let d = 0; d < density; d++) {
+            ctx.save();
+            ctx.translate(d * .5, 0);
+            ctx.stroke(new Path2D(path.toPathData()));
+            ctx.restore();
+        }
+
+        ctx.restore();
+        currentY += lineHeight;
+    });
+}
+
+function showClientPreview() {
+    draw();
+
+    const modal = document.getElementById("client-modal");
+    const modalCanvas = document.getElementById("modal-canvas");
+    const modalCtx = modalCanvas.getContext("2d");
+
+    modalCanvas.width = canvas.width * 2;
+    modalCanvas.height = canvas.height * 2;
+    modalCtx.drawImage(canvas, 0, 0, modalCanvas.width, modalCanvas.height);
+    modal.style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("client-modal").style.display = "none";
+}
+
+/* Zamienia krzywe Béziera z czcionki na krótkie odcinki PLT. */
+function pathToPolylines(path, segments = 10) {
+    const polylines = [];
+    let current = null;
+    let start = null;
+    let polyline = null;
+
+    const add = point => {
+        if (!polyline) {
+            polyline = [];
+            polylines.push(polyline);
+        }
+        polyline.push(point);
+    };
+
+    const quadratic = (p0, p1, p2, t) => ({
+        x: (1 - t) ** 2 * p0.x + 2 * (1 - t) * t * p1.x + t ** 2 * p2.x,
+        y: (1 - t) ** 2 * p0.y + 2 * (1 - t) * t * p1.y + t ** 2 * p2.y
+    });
+
+    const cubic = (p0, p1, p2, p3, t) => ({
+        x: (1 - t) ** 3 * p0.x + 3 * (1 - t) ** 2 * t * p1.x + 3 * (1 - t) * t ** 2 * p2.x + t ** 3 * p3.x,
+        y: (1 - t) ** 3 * p0.y + 3 * (1 - t) ** 2 * t * p1.y + 3 * (1 - t) * t ** 2 * p2.y + t ** 3 * p3.y
+    });
+
+    path.commands.forEach(cmd => {
+        if (cmd.type === "M") {
+            current = start = { x: cmd.x, y: cmd.y };
+            polyline = null;
+            add(current);
+        } else if (cmd.type === "L") {
+            current = { x: cmd.x, y: cmd.y };
+            add(current);
+        } else if (cmd.type === "Q" || cmd.type === "C") {
+            const end = { x: cmd.x, y: cmd.y };
+
+            for (let i = 1; i <= segments; i++) {
+                const t = i / segments;
+                add(cmd.type === "Q"
+                    ? quadratic(current, { x: cmd.x1, y: cmd.y1 }, end, t)
+                    : cubic(current, { x: cmd.x1, y: cmd.y1 }, { x: cmd.x2, y: cmd.y2 }, end, t)
+                );
+            }
+
+            current = end;
+        } else if (cmd.type === "Z" && start) {
+            add(start);
+            current = start;
+        }
+    });
+
+    return polylines.filter(line => line.length > 1);
+}
+
+function appendPolylinesPLT(plt, polylines, transform) {
+    polylines.forEach(polyline => {
+        polyline.forEach((point, index) => {
+            const transformed = transform(point);
+            const command = index === 0 ? "PU" : "PD";
+            plt.value += `${command}${Math.round(transformed.x)},${Math.round(transformed.y)};`;
+        });
+    });
+}
+
+function exportPLT() {
+    if (!fObj) return;
+
+    const wMM = Math.max(1, parseInt(document.getElementById("w").value, 10) || 80);
+    const hMM = Math.max(1, parseInt(document.getElementById("h").value, 10) || 50);
+    const fontSize = parseInt(document.getElementById("sz").value, 10) || 100;
+    const density = parseInt(document.getElementById("ls").value, 10) || 1;
+    const lines = getLines();
+    const flipHorizontal = document.getElementById("flipHorizontal").checked;
+    const flipVertical = document.getElementById("flipVertical").checked;
+    const useArc = document.getElementById("useArc").checked;
+    const arcAngle = parseInt(document.getElementById("arcAngleSlider").value, 10) || 0;
+    const arcRadius = parseInt(document.getElementById("arcRadiusSlider").value, 10) || 30;
+
+    const canvasWidth = wMM * 5;
+    const canvasHeight = hMM * 5;
+    const scale = 8; // 5 px/mm × 8 = 40 jednostek HPGL/mm
+    const lineHeight = fontSize * 1.1;
+    const plt = { value: "IN;DF;PS1;" };
+
+    const mapCanvasToPLT = point => ({
+        x: point.x * scale,
+        y: (canvasHeight - point.y) * scale
+    });
+
+    if (useArc) {
+        lines.forEach((line, lineIndex) => {
+            const radius = arcRadius * 5 + (lineIndex - (lines.length - 1) / 2) * lineHeight;
+            if (radius <= fontSize) return;
+
+            getArcGlyphs(line, radius, arcAngle, fontSize).forEach(glyph => {
+                for (let d = 0; d < density; d++) {
+                    appendPolylinesPLT(plt, pathToPolylines(glyph.path), point => {
+                        let x = point.x - glyph.width / 2;
+                        let y = point.y - glyph.radius - d * .5;
+
+                        const cos = Math.cos(glyph.angle);
+                        const sin = Math.sin(glyph.angle);
+                        [x, y] = [x * cos - y * sin, x * sin + y * cos];
+
+                        if (flipHorizontal) x = -x;
+                        if (flipVertical) y = -y;
+
+                        return mapCanvasToPLT({
+                            x: canvasWidth / 2 + x,
+                            y: canvasHeight / 2 + y
+                        });
+                    });
+                }
+            });
+        });
+    } else {
+        const totalBlockHeight = lines.length * lineHeight;
+        let currentY = canvasHeight / 2 - totalBlockHeight / 2 + fontSize * .35 + lineHeight / 2;
+
+        lines.forEach(line => {
+            const path = fObj.getPath(line, 0, 0, fontSize);
+            const box = path.getBoundingBox();
+            const baseX = canvasWidth / 2 - (box.x2 - box.x1) / 2 - box.x1;
+
+            for (let d = 0; d < density; d++) {
+                appendPolylinesPLT(plt, pathToPolylines(path), point => {
+                    let x = baseX + point.x + d * .5;
+                    let y = currentY + point.y;
+
+                    if (flipHorizontal) x = canvasWidth - x;
+                    if (flipVertical) y = canvasHeight - y;
+
+                    return mapCanvasToPLT({ x, y });
+                });
+            }
+
+            currentY += lineHeight;
+        });
+    }
+
+    plt.value += "PU0,0;SP0;";
+
+    const blob = new Blob([plt.value], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `GRAW_CENTER_${Date.now()}.PLT`;
+    link.click();
+
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+window.onload = () => loadFont(document.getElementById("fontPicker").value);
+</script>
 </body>
 </html>
