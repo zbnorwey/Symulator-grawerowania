@@ -284,11 +284,11 @@ function draw() {
         const x = centerX - lineWidth / 2 - box.x1;
 
         ctx.save();
-        ctx.translate(centerX, centerY);
+        ctx.translate(centerX, currentY);
         if (flipHorizontal) ctx.scale(-1, 1);
         if (flipVertical) ctx.scale(1, -1);
-        ctx.translate(-centerX, -centerY);
-        ctx.translate(x, currentY);
+        const tx = (canvas.width / 2) - (lineWidth / 2) - box.x1;
+        ctx.translate(tx - centerX, 0);
 
         for (let d = 0; d < density; d++) {
             ctx.save();
@@ -449,7 +449,7 @@ function exportPLT() {
                     let y = currentY + point.y;
 
                     if (flipHorizontal) x = canvasWidth - x;
-                    if (flipVertical) y = canvasHeight - y;
+                    if (flipVertical) y = currentY - point.y;
 
                     return mapCanvasToPLT({ x, y });
                 });
