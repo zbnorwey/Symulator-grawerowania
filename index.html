@@ -19,7 +19,7 @@
         button.action { padding: 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
         button.action:active { transform: scale(0.95); }
         .status { font-size: 11px; color: var(--acc); text-align: center; margin-bottom: 10px; height: 14px; }
-		/* Styl okna prezentacji */
+        /* Styl okna prezentacji */
         #client-modal {
             display: none;
             position: fixed;
@@ -37,7 +37,7 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
             text-align: center;
         }
-            #modal-canvas {
+        #modal-canvas {
             max-width: 90vw;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -55,6 +55,22 @@
         #fontPicker:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
+        .checkbox-group label {
+            margin: 0;
+            font-size: 12px;
+            display: inline;
         }
     </style>
 </head>
@@ -83,6 +99,11 @@
     <div class="card">
         <label>Treść graweru</label>
         <textarea id="txt" rows="2" oninput="draw()">Grawer 2026</textarea>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="flipText" onchange="draw()">
+            <label for="flipText">Odwróć napis (lustrzane odbicie)</label>
+        </div>
 
         <div style="display: flex; gap: 10px;">
             <div style="flex:2">
@@ -193,6 +214,7 @@
         const m = mats[document.getElementById('mat').value] || mats.gold;
         const density = parseInt(document.getElementById('ls').value);
         const linesOfText = getLines();
+        const isFlipped = document.getElementById('flipText').checked;
 
         canvas.width = wMM * 5;
         canvas.height = hMM * 5;
@@ -206,7 +228,6 @@
         const totalBlockHeight = linesOfText.length * lineHeight;
         
         // Obliczamy punkt startowy tak, aby ŚRODEK bloku był na ŚRODKU canvasu
-        // fontSize * 0.7 to korekta wizualna (fonty mają "naddatek" na dole/górze)
         let currentY = (canvas.height / 2) - (totalBlockHeight / 2) + (fontSize * 0.35) + (lineHeight / 2);
 
         ctx.strokeStyle = m.t;
@@ -219,6 +240,14 @@
             const tx = (canvas.width / 2) - (lineWidth / 2) - box.x1;
 
             ctx.save();
+            
+            if (isFlipped) {
+                // Odwróć napis - zastosuj lustrzane odbicie
+                ctx.translate(canvas.width / 2, currentY);
+                ctx.scale(-1, 1);
+                ctx.translate(-canvas.width / 2, 0);
+            }
+            
             ctx.translate(tx, currentY);
             
             const p2d = new Path2D(path.toPathData());
@@ -263,16 +292,14 @@
         const fontSize = parseInt(document.getElementById('sz').value);
         const density = parseInt(document.getElementById('ls').value);
         const linesOfText = getLines();
+        const isFlipped = document.getElementById('flipText').checked;
 
         const scale = 8; 
         const pltLineHeight = fontSize * 1.1 * scale;
         const pltTotalBlockHeight = linesOfText.length * pltLineHeight;
         
-        // Wyśrodkowanie w pionie dla PLT (pamiętaj o odwróconej osi Y w grawerkach)
-        // Obliczamy środek pionowy w jednostkach plotera
+        // Wyśrodkowanie w pionie dla PLT
         const pltCenterY = (hMM * 40) / 2;
-        
-        // Startowa pozycja dla pierwszej linii w PLT:
         let currentPltY = pltCenterY + (pltTotalBlockHeight / 2) - (fontSize * 0.35 * scale) - (pltLineHeight / 2);
 
         let plt = "IN;DF;PS1;";
@@ -281,19 +308,27 @@
             const path = fObj.getPath(line, 0, 0, fontSize);
             const box = path.getBoundingBox();
             const lineWidth = (box.x2 - box.x1) * scale;
-            const offsetX = ((wMM * 40) / 2) - (lineWidth / 2) - (box.x1 * scale);
+            const pltCenterX = (wMM * 40) / 2;
+            const offsetX = pltCenterX - (lineWidth / 2) - (box.x1 * scale);
 
             for (let d = 0; d < density; d++) {
                 const shift = d * 4; 
                 path.commands.forEach(cmd => {
-                    const x = Math.round(cmd.x * scale + offsetX + shift);
+                    let x = cmd.x * scale + offsetX + shift;
+                    
+                    // Jeśli czcionka jest odwrócona, odbij współrzędną X
+                    if (isFlipped) {
+                        x = (wMM * 40) - x;
+                    }
+                    
                     const y = Math.round(currentPltY - (cmd.y * scale));
+                    x = Math.round(x);
 
                     if (cmd.type === 'M') plt += `PU${x},${y};`;
                     else if (['L', 'Q', 'C'].includes(cmd.type)) plt += `PD${x},${y};`;
                 });
             }
-            currentPltY -= pltLineHeight; // Idziemy w dół osi Y grawerki
+            currentPltY -= pltLineHeight;
         });
 
         plt += "PU0,0;SP0;EC;";
