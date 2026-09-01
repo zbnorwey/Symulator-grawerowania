@@ -237,17 +237,18 @@
             const path = fObj.getPath(line, 0, 0, fontSize);
             const box = path.getBoundingBox();
             const lineWidth = box.x2 - box.x1;
-            const tx = (canvas.width / 2) - (lineWidth / 2) - box.x1;
-
+            
             ctx.save();
             
             if (isFlipped) {
-                // Odwróć napis - zastosuj lustrzane odbicie
-                ctx.translate(canvas.width / 2, currentY);
+                // Dla odwróconego tekstu: odbij względem środka canvasu w poziomie
+                const centerX = canvas.width / 2;
+                ctx.translate(centerX, 0);
                 ctx.scale(-1, 1);
-                ctx.translate(-canvas.width / 2, 0);
+                ctx.translate(-centerX, 0);
             }
             
+            const tx = (canvas.width / 2) - (lineWidth / 2) - box.x1;
             ctx.translate(tx, currentY);
             
             const p2d = new Path2D(path.toPathData());
@@ -309,16 +310,16 @@
             const box = path.getBoundingBox();
             const lineWidth = (box.x2 - box.x1) * scale;
             const pltCenterX = (wMM * 40) / 2;
-            const offsetX = pltCenterX - (lineWidth / 2) - (box.x1 * scale);
+            const baseOffsetX = pltCenterX - (lineWidth / 2) - (box.x1 * scale);
 
             for (let d = 0; d < density; d++) {
                 const shift = d * 4; 
                 path.commands.forEach(cmd => {
-                    let x = cmd.x * scale + offsetX + shift;
+                    let x = cmd.x * scale + baseOffsetX + shift;
                     
-                    // Jeśli czcionka jest odwrócona, odbij współrzędną X
+                    // Jeśli czcionka jest odwrócona, odbij współrzędną X względem środka
                     if (isFlipped) {
-                        x = (wMM * 40) - x;
+                        x = pltCenterX - (x - pltCenterX);
                     }
                     
                     const y = Math.round(currentPltY - (cmd.y * scale));
