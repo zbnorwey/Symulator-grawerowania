@@ -88,17 +88,16 @@
             <div style="flex:2">
                 <label>Czcionka</label>
                 <select id="fontPicker" onchange="loadFont(this.value); this.blur();">
-                    <option value="https://fonts.gstatic.com/s/sacramento/v23/buEzpo6gcdhwwEHOZ41Xcall_h6cT_X.ttf">Vanessa (Sacramento)</option>
-                    <option value="https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX5ZZjirDgPDQ.ttf">Open Sans</option>
-                    <option value="https://fonts.gstatic.com/s/lato/v24/S6uyw4BMUTPHjx4wWJWsFljA.ttf">Lato</option>
-                    <option value="https://fonts.gstatic.com/s/oswald/v55/TK3_WkUVV25L7gCn8Bw6RBJoe-rA.ttf">Oswald</option>
-                    <option value="https://fonts.gstatic.com/s/pacifico/v21/FwZY7-Qmy14u9lezJ-6G6MjQrwc.ttf">Pacifico (Pisanka)</option>
-                    <option value="https://fonts.gstatic.com/s/lobster/v29/neIVzCeow3V5E3_z_eZAP_-8_Q.ttf">Lobster</option>
-                    <option value="https://fonts.gstatic.com/s/anton/v32/1Ptgg87LROyAm0K0uciwmIl1_g6c.ttf">Anton (Gruba)</option>
-                    <option value="https://fonts.gstatic.com/s/dancingscript/v16/If2cXTr6YS-zF4S-kcSWSVi_sxFuIFUMzA.ttf">Dancing Script</option>
-                    <option value="https://fonts.gstatic.com/s/playfairdisplay/v30/nuFvD-vgNJn_4Vf_VOXc9MhkPsP33tJjHjIfbPGM7g.ttf">Playfair Display</option>
-                    <option value="https://fonts.gstatic.com/s/bangers/v16/Qw3-_Lt6izbttdyDQXnafBjgN0qx.ttf">Bangers (Komiks)</option>
-                    <option value="https://fonts.gstatic.com/s/orbitron/v32/yMJRMIlzdpvBhQQL_SC3X9yhF25-M3sQ.ttf">Orbitron (Modern)</option>
+                    <option value="fonts/HennyPenny-Regular.ttf">Henny Penny</option>
+                    <option value="fonts/ImperialScript-Regular.ttf">Imperial Script</option>
+                    <option value="fonts/LavishlyYours-Regular.ttf">Lavishly Yours</option>
+                    <option value="fonts/OleoScriptSwashCaps-Regular.ttf">Oleo Script (Regular)</option>
+                    <option value="fonts/OleoScriptSwashCaps-Bold.ttf">Oleo Script (Bold)</option>
+                    <option value="fonts/RougeScript-Regular.ttf">Rouge Script</option>
+                    <option value="fonts/SpecialElite-Regular.ttf">Special Elite</option>
+                    <option value="fonts/Tangerine-Regular.ttf">Tangerine (Regular)</option>
+                    <option value="fonts/Tangerine-Bold.ttf">Tangerine (Bold)</option>
+                    <option value="fonts/Tapestry-Regular.ttf">Tapestry</option>
                 </select>
             </div>
             <div style="flex:1">
@@ -149,7 +148,7 @@
             return;
         }
         
-        // Załaduj czcionkę z CDN Google Fonts
+        // Załaduj czcionkę z lokalnego folderu /fonts
         fetch(url)
             .then(response => {
                 if (!response.ok) {
