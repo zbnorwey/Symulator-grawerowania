@@ -241,7 +241,7 @@
         return document.getElementById('txt').value.split('\n').filter(l => l.length > 0);
     }
 
-    function drawTextOnArc(ctx, text, centerX, centerY, radius, angle, fontSize, isFlipped) {
+    function drawTextOnArc(ctx, text, centerX, centerY, radius, angle, fontSize, flipHorizontal, flipVertical) {
         const path = fObj.getPath(text, 0, 0, fontSize);
         const box = path.getBoundingBox();
         const textWidth = box.x2 - box.x1;
@@ -260,12 +260,13 @@
             
             ctx.save();
             ctx.translate(centerX, centerY);
+            
+            // Zastosuj odbicia
+            if (flipHorizontal) ctx.scale(-1, 1);
+            if (flipVertical) ctx.scale(1, -1);
+            
             ctx.rotate(charAngle);
             ctx.translate(0, -radius);
-            
-            if (isFlipped) {
-                ctx.scale(-1, 1);
-            }
             
             ctx.translate(-charWidth / 2, 0);
             
@@ -309,7 +310,7 @@
             linesOfText.forEach((line) => {
                 for (let d = 0; d < density; d++) {
                     ctx.save();
-                    drawTextOnArc(ctx, line, centerX, centerY, arcRadius * 5, arcAngle, fontSize, flipHorizontal);
+                    drawTextOnArc(ctx, line, centerX, centerY, arcRadius * 5, arcAngle, fontSize, flipHorizontal, flipVertical);
                     ctx.restore();
                 }
             });
@@ -409,6 +410,11 @@
                             let x = cmd.x * scale;
                             let y = -cmd.y * scale - radius;
                             
+                            // Odbicia przed rotacją
+                            if (flipHorizontal) x = -x;
+                            if (flipVertical) y = -y;
+                            
+                            // Rotacja
                             const cosA = Math.cos(charAngle);
                             const sinA = Math.sin(charAngle);
                             const rotX = x * cosA - y * sinA;
@@ -416,9 +422,6 @@
                             
                             x = pltCenterX + rotX;
                             y = pltCenterY + rotY;
-                            
-                            if (flipHorizontal) x = pltCenterX - (x - pltCenterX);
-                            if (flipVertical) y = pltCenterY - (y - pltCenterY);
                             
                             x = Math.round(x);
                             y = Math.round(y);
